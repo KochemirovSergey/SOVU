@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор города и школы</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Выберите город и школу</h1>
+    <form method="POST">
+        <div class="form-group">
+            <select name="city" id="city">
+                <option value="">Выберите город из списка</option>
+                {% for city in cities %}
+                <option value="{{ city }}" {% if selected_city == city %}selected{% endif %}>{{ city }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <input type="text" name="school" id="school" placeholder="Введите название школы" 
+                   value="{{ school_name if school_name else '' }}">
+        </div>
+        <button type="submit">Определить школу</button>
+    </form>
+    {% if selected_city and school_name %}
+    <div class="result" style="display: block;">
+        <h2>Выбранные данные:</h2>
+        <p>Город: {{ selected_city }}</p>
+        <p>Школа: {{ school_name }}</p>
+    </div>
+    {% endif %}
+</body>
+</html> 

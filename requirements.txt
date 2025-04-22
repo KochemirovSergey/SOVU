@@ -1,0 +1,7 @@
+Flask==3.0.2
+pandas==2.2.1
+langchain-openai>=0.0.5
+langchain-community>=0.0.10
+pydantic>=2.5.0
+rich>=13.7.0
+tavily-python>=0.2.6 
