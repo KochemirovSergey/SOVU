@@ -16,13 +16,19 @@ os.environ["LANGCHAIN_API_KEY"] = "lsv2_pt_e47421e550c3436c8d634ea6be048e46_8a27
 os.environ["LANGCHAIN_PROJECT"] = "pr-untimely-licorice-46"
 os.environ["TAVILY_API_KEY"] = "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"
 
-# Модель данных для школы
-class SchoolInfo(BaseModel):
-    full_name: str = Field(default="не найдено", description="Полное название школы")
-    address: str = Field(default="не найдено", description="Полный адрес школы")
-    status: str = Field(default="не найдено", description="Статус школы (реорганизована/действующая)")
-    inn: str = Field(default="не найдено", description="ИНН школы")
-    director: str = Field(default="не найдено", description="ФИО директора")
+# Модель данных для базовой информации о школе
+class SchoolBasicInfo(BaseModel):
+    name: str = Field(default="", description="Название школы")
+    status: str = Field(default="", description="Статус школы (строго 'ликвидирована' или 'действующая')")
+    successor: str = Field(default="", description="Правопреемник (название организации или 'отсутствует')")
+
+# Модель данных для детальной информации о школе
+class SchoolDetailedInfo(BaseModel):
+    full_name: str = Field(default="", description="Полное название школы")
+    address: str = Field(default="", description="Полный адрес школы")
+    inn: str = Field(default="", description="ИНН школы")
+    director: str = Field(default="", description="ФИО директора")
+    email: str = Field(default="", description="Официальная почта школы")
 
 # Инициализация LLM и поискового API
 llm = ChatOpenAI(
@@ -34,8 +40,9 @@ llm = ChatOpenAI(
 search = TavilySearchResults()
 console = Console()
 
-# Инициализация парсера JSON
-parser = JsonOutputParser(pydantic_object=SchoolInfo)
+# Инициализация парсеров JSON
+basic_parser = JsonOutputParser(pydantic_object=SchoolBasicInfo)
+detailed_parser = JsonOutputParser(pydantic_object=SchoolDetailedInfo)
 
 def get_user_input() -> tuple[str, str]:
     """Получение входных данных от пользователя"""
@@ -49,12 +56,12 @@ def search_school_info(city: str, school_name: str) -> list[Dict]:
     search_results = search.invoke(query)
     return search_results
 
-def process_search_results(results: list[Dict]) -> SchoolInfo:
-    """Обработка результатов поиска с помощью LLM"""
-    # Формируем промпт для LLM
+def process_basic_info(results: list[Dict]) -> SchoolBasicInfo:
+    """Обработка результатов поиска для получения базовой информации"""
     prompt = PromptTemplate(
-        template="""Проанализируй следующие результаты поиска и извлеки информацию о школе.
-        Если информация не найдена, используй значение "не найдено".
+        template="""Проанализируй следующие результаты поиска и извлеки базовую информацию о школе.
+        Статус должен быть строго 'ликвидирована' или 'действующая'.
+        Если школа ликвидирована, укажи правопреемника. Если действующая - укажи 'отсутствует'.
         
         Результаты поиска:
         {search_results}
@@ -62,36 +69,72 @@ def process_search_results(results: list[Dict]) -> SchoolInfo:
         {format_instructions}
         """,
         input_variables=["search_results"],
-        partial_variables={"format_instructions": parser.get_format_instructions()}
+        partial_variables={"format_instructions": basic_parser.get_format_instructions()}
     )
     
-    # Создаем цепочку обработки
-    chain = prompt | llm | parser
+    chain = prompt | llm | basic_parser
     
     try:
-        # Получаем и парсим результат
         response = chain.invoke({"search_results": json.dumps(results, ensure_ascii=False, indent=2)})
         if isinstance(response, dict):
-            return SchoolInfo(**response)
+            return SchoolBasicInfo(**response)
         return response
     except Exception as e:
-        console.print(f"[red]Ошибка при обработке ответа LLM: {str(e)}[/red]")
-        return SchoolInfo()
+        console.print(f"[red]Ошибка при обработке базовой информации: {str(e)}[/red]")
+        return SchoolBasicInfo()
 
-def display_results(school_info: SchoolInfo):
-    """Отображение результатов в виде таблицы"""
-    table = Table(title="Информация о школе")
+def process_detailed_info(results: list[Dict]) -> SchoolDetailedInfo:
+    """Обработка результатов поиска для получения детальной информации"""
+    prompt = PromptTemplate(
+        template="""Проанализируй следующие результаты поиска и извлеки детальную информацию о школе.
+        Если какая-то информация не найдена, оставь поле пустым.
+        
+        Результаты поиска:
+        {search_results}
+        
+        {format_instructions}
+        """,
+        input_variables=["search_results"],
+        partial_variables={"format_instructions": detailed_parser.get_format_instructions()}
+    )
     
-    table.add_column("Параметр", style="cyan")
-    table.add_column("Значение", style="green")
+    chain = prompt | llm | detailed_parser
     
-    table.add_row("Название", school_info.full_name)
-    table.add_row("Адрес", school_info.address)
-    table.add_row("Статус", school_info.status)
-    table.add_row("ИНН", school_info.inn)
-    table.add_row("Директор", school_info.director)
+    try:
+        response = chain.invoke({"search_results": json.dumps(results, ensure_ascii=False, indent=2)})
+        if isinstance(response, dict):
+            return SchoolDetailedInfo(**response)
+        return response
+    except Exception as e:
+        console.print(f"[red]Ошибка при обработке детальной информации: {str(e)}[/red]")
+        return SchoolDetailedInfo()
+
+def display_results(basic_info: SchoolBasicInfo, detailed_info: SchoolDetailedInfo):
+    """Отображение результатов в виде двух таблиц"""
+    # Таблица с базовой информацией
+    basic_table = Table(title="Базовая информация о школе")
+    basic_table.add_column("Параметр", style="cyan")
+    basic_table.add_column("Значение", style="green")
     
-    console.print(table)
+    basic_table.add_row("Название", basic_info.name)
+    basic_table.add_row("Статус", basic_info.status)
+    basic_table.add_row("Правопреемник", basic_info.successor)
+    
+    console.print(basic_table)
+    console.print("\n")
+    
+    # Таблица с детальной информацией
+    detailed_table = Table(title="Детальная информация")
+    detailed_table.add_column("Параметр", style="cyan")
+    detailed_table.add_column("Значение", style="green")
+    
+    detailed_table.add_row("Полное название", detailed_info.full_name)
+    detailed_table.add_row("Адрес", detailed_info.address)
+    detailed_table.add_row("ИНН", detailed_info.inn)
+    detailed_table.add_row("Директор", detailed_info.director)
+    detailed_table.add_row("Почта", detailed_info.email)
+    
+    console.print(detailed_table)
 
 def main():
     """Основная функция программы"""
@@ -99,16 +142,24 @@ def main():
         # Получаем входные данные
         city, school_name = get_user_input()
         
-        # Ищем информацию
-        console.print("[yellow]Поиск информации о школе...[/yellow]")
+        # Ищем базовую информацию
+        console.print("[yellow]Поиск базовой информации о школе...[/yellow]")
         search_results = search_school_info(city, school_name)
+        basic_info = process_basic_info(search_results)
         
-        # Обрабатываем результаты
-        console.print("[yellow]Обработка результатов...[/yellow]")
-        school_info = process_search_results(search_results)
+        # В зависимости от статуса школы
+        if basic_info.status == "действующая":
+            # Для действующей школы используем те же результаты поиска
+            console.print("[yellow]Обработка детальной информации о действующей школе...[/yellow]")
+            detailed_info = process_detailed_info(search_results)
+        else:
+            # Для ликвидированной школы ищем информацию о правопреемнике
+            console.print("[yellow]Поиск информации о правопреемнике...[/yellow]")
+            successor_results = search_school_info(city, basic_info.successor)
+            detailed_info = process_detailed_info(successor_results)
         
         # Отображаем результаты
-        display_results(school_info)
+        display_results(basic_info, detailed_info)
         
     except Exception as e:
         console.print(f"[red]Произошла ошибка: {str(e)}[/red]")
