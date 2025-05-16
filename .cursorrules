@@ -1,0 +1,45 @@
+# Правила для работы с Cursor
+
+## AJAX запросы во Flask
+
+При отправке AJAX запросов из браузера во Flask необходимо соблюдать следующие правила:
+
+1. Отправка JSON данных:
+```javascript
+fetch('/endpoint', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    },
+    body: JSON.stringify(data)
+});
+```
+
+2. Получение JSON данных во Flask:
+```python
+@app.route('/endpoint', methods=['POST'])
+def handler():
+    if not request.is_json:
+        return jsonify({'error': 'Ожидается JSON'}), 400
+    data = request.get_json()
+    # Обработка данных
+    return jsonify(result)
+```
+
+3. Проверки и валидация:
+- Всегда проверяйте, что запрос содержит JSON (`request.is_json`)
+- Проверяйте структуру полученных данных
+- Возвращайте корректные HTTP коды состояния
+
+4. Обработка ошибок:
+- На клиенте используйте try-catch для обработки ошибок fetch
+- На сервере оборачивайте код в try-except
+- Логируйте ошибки для отладки
+
+5. Отладка:
+- Используйте console.log на клиенте
+- Добавляйте print на сервере
+- Проверяйте заголовки и тело запроса
+
+Эти правила помогут избежать проблем с передачей данных между клиентом и сервером во Flask-приложениях. 

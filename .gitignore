@@ -2,3 +2,4 @@ cities.csv
 /venv
 venv/bin/python3.11
 venv
+__pycache__/llm_search_school.cpython-311.pyc

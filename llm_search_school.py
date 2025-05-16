@@ -136,27 +136,45 @@ def display_results(basic_info: SchoolBasicInfo, detailed_info: SchoolDetailedIn
     
     console.print(detailed_table)
 
-def main():
-    """Основная функция программы"""
-    try:
-        # Получаем входные данные
-        city, school_name = get_user_input()
+def get_school_info(city: str, school_name: str) -> tuple[SchoolBasicInfo, SchoolDetailedInfo]:
+    """
+    Получение информации о школе по городу и названию.
+    
+    Args:
+        city (str): Название города
+        school_name (str): Название школы
         
+    Returns:
+        tuple[SchoolBasicInfo, SchoolDetailedInfo]: Кортеж с базовой и детальной информацией о школе
+    """
+    try:
         # Ищем базовую информацию
-        console.print("[yellow]Поиск базовой информации о школе...[/yellow]")
         search_results = search_school_info(city, school_name)
         basic_info = process_basic_info(search_results)
         
         # В зависимости от статуса школы
         if basic_info.status == "действующая":
             # Для действующей школы используем те же результаты поиска
-            console.print("[yellow]Обработка детальной информации о действующей школе...[/yellow]")
             detailed_info = process_detailed_info(search_results)
         else:
             # Для ликвидированной школы ищем информацию о правопреемнике
-            console.print("[yellow]Поиск информации о правопреемнике...[/yellow]")
             successor_results = search_school_info(city, basic_info.successor)
             detailed_info = process_detailed_info(successor_results)
+            
+        return basic_info, detailed_info
+        
+    except Exception as e:
+        console.print(f"[red]Произошла ошибка: {str(e)}[/red]")
+        return SchoolBasicInfo(), SchoolDetailedInfo()
+
+def main():
+    """Основная функция программы"""
+    try:
+        # Получаем входные данные
+        city, school_name = get_user_input()
+        
+        # Получаем информацию о школе
+        basic_info, detailed_info = get_school_info(city, school_name)
         
         # Отображаем результаты
         display_results(basic_info, detailed_info)
