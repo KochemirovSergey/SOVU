@@ -1,0 +1,124 @@
+/* Основные стили */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer {
+    margin-top: auto;
+}
+
+/* Стили для форм */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Стили для карточек */
+.card {
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+/* Стили для таблиц */
+.table th {
+    background-color: #f8f9fa;
+}
+
+/* Стили для кнопок */
+.btn-action {
+    margin-right: 0.5rem;
+}
+
+/* Стили для административной панели */
+.admin-dashboard .card {
+    transition: transform 0.3s;
+}
+
+.admin-dashboard .card:hover {
+    transform: translateY(-5px);
+}
+
+/* Стили для страницы выпускника */
+.graduate-profile {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+/* Стили для страницы учителя */
+.teacher-profile {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+/* Стили для страницы школы */
+.school-profile {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+/* Стили для QR-кодов */
+.qr-code-container {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.qr-code-container img {
+    max-width: 200px;
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    background-color: white;
+}
+
+/* Стили для голосования */
+.vote-container {
+    margin: 2rem 0;
+}
+
+.vote-item {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    background-color: white;
+}
+
+.vote-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Стили для страницы благодарности */
+.thank-you-container {
+    text-align: center;
+    margin: 3rem 0;
+}
+
+.thank-you-container h1 {
+    color: #28a745;
+    margin-bottom: 1.5rem;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .card-deck {
+        display: block;
+    }
+}

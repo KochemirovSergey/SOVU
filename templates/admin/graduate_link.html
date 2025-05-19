@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Ссылка для выпускника{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Ссылка для выпускника</h1>
+        <a href="{{ url_for('admin_panel.graduate_detail', id=graduate.id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Назад к информации
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ссылка для выпускника "{{ graduate.full_name }}"</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p>Эту ссылку нужно отправить выпускнику для заполнения информации о школах.</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Ссылка:</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ link }}" id="graduateLink" readonly>
+                            <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('graduateLink')">
+                                <i class="bi bi-clipboard"></i> Копировать
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">QR-код:</label>
+                        <div class="text-center">
+                            <div id="qrcode" class="d-inline-block p-3 border rounded"></div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary" onclick="generateQRCode()">
+                                <i class="bi bi-qr-code"></i> Сгенерировать QR-код
+                            </button>
+                            <button class="btn btn-success" onclick="downloadQRCode()" id="downloadBtn" style="display: none;">
+                                <i class="bi bi-download"></i> Скачать QR-код
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="mailto:?subject=Ссылка для заполнения информации о школах&body=Здравствуйте, {{ graduate.full_name }}!%0D%0A%0D%0AПожалуйста, перейдите по ссылке для заполнения информации о школах:%0D%0A%0D%0A{{ link }}%0D%0A%0D%0AС уважением,%0D%0AАдминистрация системы" class="btn btn-outline-primary">
+                            <i class="bi bi-envelope"></i> Отправить по email
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode.js@1.0.0/qrcode.min.js"></script>
+<script>
+function copyToClipboard(elementId) {
+    var copyText = document.getElementById(elementId);
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    document.execCommand("copy");
+    
+    // Показать уведомление
+    alert("Скопировано: " + copyText.value);
+}
+
+let qr;
+
+function generateQRCode() {
+    document.getElementById('qrcode').innerHTML = '';
+    qr = new QRCode(document.getElementById('qrcode'), {
+        text: "{{ link }}",
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+    
+    document.getElementById('downloadBtn').style.display = 'inline-block';
+}
+
+function downloadQRCode() {
+    if (!qr) return;
+    
+    // Получаем canvas из QR-кода
+    const canvas = document.querySelector("#qrcode canvas");
+    
+    // Создаем ссылку для скачивания
+    const link = document.createElement('a');
+    link.download = 'qrcode_{{ graduate.id }}.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+</script>
+{% endblock %}

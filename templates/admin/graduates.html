@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Управление выпускниками{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Управление выпускниками</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Добавить выпускника</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin_panel.graduates') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-3">
+                            {{ form.full_name.label(class="form-label") }}
+                            {{ form.full_name(class="form-control") }}
+                            {% if form.full_name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.full_name.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Список выпускников</h5>
+        </div>
+        <div class="card-body">
+            {% if graduates %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>ФИО</th>
+                                <th>Дата создания</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for graduate in graduates %}
+                                <tr>
+                                    <td>{{ graduate.id }}</td>
+                                    <td>{{ graduate.full_name }}</td>
+                                    <td>{{ graduate.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('admin_panel.graduate_detail', id=graduate.id) }}" class="btn btn-sm btn-info">
+                                                <i class="bi bi-eye"></i> Просмотр
+                                            </a>
+                                            <a href="{{ url_for('admin_panel.graduate_link', id=graduate.id) }}" class="btn btn-sm btn-success">
+                                                <i class="bi bi-link"></i> Ссылка
+                                            </a>
+                                            <a href="{{ url_for('admin_panel.graduate_edit', id=graduate.id) }}" class="btn btn-sm btn-warning">
+                                                <i class="bi bi-pencil"></i> Изменить
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ graduate.id }}">
+                                                <i class="bi bi-trash"></i> Удалить
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Модальное окно для подтверждения удаления -->
+                                        <div class="modal fade" id="deleteModal{{ graduate.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ graduate.id }}" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteModalLabel{{ graduate.id }}">Подтверждение удаления</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        Вы уверены, что хотите удалить выпускника "{{ graduate.full_name }}"?
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                        <form action="{{ url_for('admin_panel.graduate_delete', id=graduate.id) }}" method="POST" style="display: inline;">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                            <button type="submit" class="btn btn-danger">Удалить</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    Выпускники не найдены. Добавьте первого выпускника с помощью формы выше.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

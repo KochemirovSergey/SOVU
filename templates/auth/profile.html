@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль пользователя{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Профиль пользователя</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Имя пользователя:</div>
+                        <div class="col-md-8">{{ current_user.username }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Email:</div>
+                        <div class="col-md-8">{{ current_user.email }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Роль:</div>
+                        <div class="col-md-8">{% if current_user.is_admin %}Администратор{% else %}Пользователь{% endif %}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Дата регистрации:</div>
+                        <div class="col-md-8">{{ current_user.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ url_for('admin_panel.index') }}" class="btn btn-primary">Вернуться в админ-панель</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

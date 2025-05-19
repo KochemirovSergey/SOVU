@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Административная панель{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Административная панель</h1>
+    
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Выпускники</h5>
+                    <p class="card-text display-4">{{ graduates_count }}</p>
+                    <a href="{{ url_for('admin_panel.graduates') }}" class="btn btn-light">Управление</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Школы</h5>
+                    <p class="card-text display-4">{{ schools_count }}</p>
+                    <a href="{{ url_for('admin_panel.schools') }}" class="btn btn-light">Управление</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Учителя</h5>
+                    <p class="card-text display-4">{{ teachers_count }}</p>
+                    <a href="{{ url_for('admin_panel.teachers') }}" class="btn btn-light">Управление</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-4">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Заявки</h5>
+                    <p class="card-text display-4">{{ applications_count }}</p>
+                    <a href="{{ url_for('admin_panel.applications') }}" class="btn btn-light">Управление</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Последние действия
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Здесь будет отображаться список последних действий в системе.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Статистика
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Здесь будет отображаться статистика по системе.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Документ заявки{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Документ заявки #{{ application.id }}</h1>
+        <a href="{{ url_for('admin_panel.application_detail', id=application.id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Назад к заявке
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Управление документом</h5>
+                </div>
+                <div class="card-body">
+                    {% if application.document_path %}
+                        <div class="alert alert-success">
+                            <h5 class="alert-heading">Документ сгенерирован!</h5>
+                            <p>Документ успешно сгенерирован и доступен для скачивания.</p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Путь к документу:</label>
+                            <input type="text" class="form-control" value="{{ application.document_path }}" readonly>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('static', filename='documents/' + application.document_path.split('/')[-1]) }}" class="btn btn-primary" target="_blank">
+                                <i class="bi bi-file-earmark-text"></i> Открыть документ
+                            </a>
+                            
+                            <form method="POST" action="{{ url_for('admin_panel.application_document', id=application.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="regenerate" value="true">
+                                <button type="submit" class="btn btn-warning w-100">
+                                    <i class="bi bi-arrow-repeat"></i> Сгенерировать заново
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h5 class="alert-heading">Документ не сгенерирован</h5>
+                            <p>Для этой заявки еще не был сгенерирован документ. Нажмите кнопку ниже, чтобы сгенерировать документ.</p>
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('admin_panel.application_document', id=application.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="generate" value="true">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-file-earmark-plus"></i> Сгенерировать документ
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Информация о заявке</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Выпускник:</div>
+                        <div class="col-md-8">{{ application.graduate.full_name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Школа:</div>
+                        <div class="col-md-8">{{ application.school.name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Период обучения:</div>
+                        <div class="col-md-8">{{ application.start_year }} - {{ application.end_year }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Классы:</div>
+                        <div class="col-md-8">{{ application.start_grade }} - {{ application.end_grade }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Статус:</div>
+                        <div class="col-md-8">
+                            {% if application.status == 'created' %}
+                                <span class="badge bg-primary">Создана</span>
+                            {% elif application.status == 'sent' %}
+                                <span class="badge bg-warning">Отправлена</span>
+                            {% elif application.status == 'completed' %}
+                                <span class="badge bg-success">Завершена</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ application.status }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
