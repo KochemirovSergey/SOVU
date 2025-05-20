@@ -10,6 +10,7 @@ class School(db.Model):
     director = db.Column(db.String(255))
     email = db.Column(db.String(255))
     status = db.Column(db.String(50))  # 'действующая' или 'ликвидирована'
+    city = db.Column(db.String(255))  # Город школы
     successor_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=True)
     
     # Отношения

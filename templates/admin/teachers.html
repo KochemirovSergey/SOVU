@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Список учителей{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Список учителей</h2>
+    {# Кнопка "Добавить учителя" и действия временно отключены, так как соответствующие маршруты не реализованы #}
+    {# <div class="mb-3">
+        <a href="#" class="btn btn-primary disabled" aria-disabled="true">Добавить учителя</a>
+    </div> #}
+    {% if teachers and teachers|length > 0 %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>ФИО</th>
+                    <th>Подтверждающий документ</th>
+                    <th>Вероятность соответствия</th>
+                    <th>Дата создания</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for teacher in teachers %}
+                <tr>
+                    <td>{{ teacher.id }}</td>
+                    <td>{{ teacher.full_name }}</td>
+                    <td>
+                        {% if teacher.document_path %}
+                            <a href="{{ url_for('static', filename=teacher.document_path.replace('static/', '')) }}" target="_blank">Документ</a>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if teacher.verification_score is not none %}
+                            {{ (teacher.verification_score * 100) | round(1) }}%
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ teacher.created_at.strftime('%d.%m.%Y %H:%M') if teacher.created_at else '—' }}
+                    </td>
+                    <td>
+                        {# Действия временно отключены #}
+                        <a href="#" class="btn btn-sm btn-warning disabled" aria-disabled="true">Редактировать</a>
+                        <a href="#" class="btn btn-sm btn-danger disabled" aria-disabled="true">Удалить</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="alert alert-info">Нет учителей.</div>
+    {% endif %}
+</div>
+{% endblock %}

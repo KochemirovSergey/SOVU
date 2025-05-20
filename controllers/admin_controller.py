@@ -45,7 +45,7 @@ def graduates():
         db.session.add(graduate)
         db.session.commit()
         flash('Выпускник успешно добавлен', 'success')
-        return redirect(url_for('admin.graduates'))
+        return redirect(url_for('admin_panel.graduates'))
     
     graduates = Graduate.query.all()
     return render_template('admin/graduates.html', graduates=graduates, form=form)
@@ -84,7 +84,7 @@ def graduate_delete(id):
     db.session.delete(graduate)
     db.session.commit()
     flash('Выпускник удален', 'success')
-    return redirect(url_for('admin.graduates'))
+    return redirect(url_for('admin_panel.graduates'))
 
 @admin_bp.route('/graduates/<int:id>', methods=['GET'])
 @login_required

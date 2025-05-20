@@ -23,7 +23,7 @@ class Config:
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
     
     # Настройки для приложения
-    BASE_URL = os.environ.get('BASE_URL') or 'http://localhost:5000'
+    BASE_URL = os.environ.get('BASE_URL') or 'http://127.0.0.1:5000'
     
     @staticmethod
     def init_app(app):

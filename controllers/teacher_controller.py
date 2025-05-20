@@ -9,6 +9,47 @@ from services.link_service import LinkService
 from ai.document_analyzer import DocumentAnalyzer
 
 teacher_bp = Blueprint('teacher_panel', __name__)
+@teacher_bp.route('/application/<token>', methods=['GET', 'POST'])
+def application_form(token):
+    """
+    Форма для заполнения информации учителем по ссылке из заявки (teacher_link_token).
+    """
+    application = Application.query.filter_by(teacher_link_token=token).first_or_404()
+    school = application.school
+    graduate = application.graduate
+
+    if request.method == 'POST':
+        # Пример: учитель может заполнить ФИО, предмет, годы работы и т.д.
+        # Здесь можно добавить обработку данных формы, например:
+        teacher_full_name = request.form.get('teacher_full_name')
+        teacher_subject = request.form.get('teacher_subject')
+        teacher_start_year = request.form.get('teacher_start_year')
+        teacher_end_year = request.form.get('teacher_end_year')
+        # Здесь можно создать Teacher и TeacherSchool, связав их с school и application
+        if teacher_full_name and teacher_subject and teacher_start_year and teacher_end_year:
+            teacher = Teacher(full_name=teacher_full_name)
+            db.session.add(teacher)
+            db.session.commit()
+            teacher_school = TeacherSchool(
+                teacher_id=teacher.id,
+                school_id=school.id,
+                start_year=teacher_start_year,
+                end_year=teacher_end_year,
+                subject=teacher_subject
+            )
+            db.session.add(teacher_school)
+            db.session.commit()
+            flash('Данные учителя успешно сохранены', 'success')
+            return redirect(url_for('teacher_panel.application_form', token=token))
+        else:
+            flash('Пожалуйста, заполните все поля', 'danger')
+
+    return render_template(
+        'teacher/application_form.html',
+        application=application,
+        school=school,
+        graduate=graduate
+    )
 
 # Сервисы
 link_service = LinkService()

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Мои школы{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Мои школы</h2>
+    <div class="card mt-4">
+        <div class="card-body">
+            {% if graduate.schools %}
+                <p class="card-text"><strong>Список школ:</strong></p>
+                <ul>
+                {% for gs in graduate.schools %}
+                    <li>
+                        {{ gs.school.name if gs.school else '—' }}
+                        ({{ gs.start_year }}–{{ gs.end_year }}, {{ gs.start_grade }}–{{ gs.end_grade }} класс)
+                        <form method="post" action="{{ url_for('graduate_panel.delete_school', token=graduate.link_token, school_id=gs.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Удалить школу?');">Удалить</button>
+                        </form>
+                        <a href="{{ url_for('graduate_panel.edit_school', token=graduate.link_token, school_id=gs.id) }}" class="btn btn-secondary btn-sm">Редактировать</a>
+                    </li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p class="card-text">Нет информации о школах.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Добавить школу</h5>
+            {% if success_message %}
+                <div class="alert alert-success" role="alert">
+                    {{ success_message }}
+                </div>
+            {% endif %}
+            <form method="post" autocomplete="off">
+                <div class="mb-3">
+                    <label for="city" class="form-label">Город</label>
+                    <select name="city" id="city" class="form-select" required>
+                        <option value="">Выберите город из списка</option>
+                        {% for city in cities %}
+                        <option value="{{ city }}" {% if (form_data.city == city) or (selected_city == city) %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors.city %}
+                        <div class="text-danger">{{ errors.city }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="school_name" class="form-label">Название школы</label>
+                    <input type="text" class="form-control" id="school_name" name="school_name"
+                        value="{{ form_data.school_name or '' }}" required>
+                    {% if errors.school_name %}
+                        <div class="text-danger">{{ errors.school_name }}</div>
+                    {% endif %}
+                </div>
+                {% if search_done %}
+                    <div class="mb-3">
+                        <label class="form-label">Информация о школе</label>
+                        <textarea class="form-control" rows="2" readonly>Заглушка</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_year" class="form-label">Год начала</label>
+                        <select name="start_year" id="start_year" class="form-select" required>
+                            <option value="">Выберите год</option>
+                            {% for y in range(1950, 2021) %}
+                            <option value="{{ y }}" {% if form_data.start_year == y|string %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.start_year %}
+                            <div class="text-danger">{{ errors.start_year }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_year" class="form-label">Год окончания</label>
+                        <select name="end_year" id="end_year" class="form-select" required>
+                            <option value="">Выберите год</option>
+                            {% for y in range(1950, 2021) %}
+                            <option value="{{ y }}" {% if form_data.end_year == y|string %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if errors.end_year %}
+                            <div class="text-danger">{{ errors.end_year }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_grade" class="form-label">Класс начала</label>
+                        <input type="number" class="form-control" id="start_grade" name="start_grade"
+                            min="1" max="11" value="{{ form_data.start_grade or '' }}" required>
+                        {% if errors.start_grade %}
+                            <div class="text-danger">{{ errors.start_grade }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_grade" class="form-label">Класс окончания</label>
+                        <input type="number" class="form-control" id="end_grade" name="end_grade"
+                            min="1" max="11" value="{{ form_data.end_grade or '' }}" required>
+                        {% if errors.end_grade %}
+                            <div class="text-danger">{{ errors.end_grade }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" name="action" value="confirm" class="btn btn-success">Подтвердить школу</button>
+                {% else %}
+                    <button type="submit" name="action" value="search" class="btn btn-primary">Найти</button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
