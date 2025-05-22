@@ -66,7 +66,24 @@ def create_app(config_name='default'):
     # Маршрут для главной страницы
     @app.route('/', methods=['GET'])
     def index():
-        return render_template('admin/index.html')
+        # Главная страница административной панели с передачей статистики
+        from models.graduate import Graduate
+        from models.school import School
+        from models.teacher import Teacher
+        from models.application import Application
+
+        graduates_count = Graduate.query.count()
+        schools_count = School.query.count()
+        teachers_count = Teacher.query.count()
+        applications_count = Application.query.count()
+
+        return render_template(
+            'admin/index.html',
+            graduates_count=graduates_count,
+            schools_count=schools_count,
+            teachers_count=teachers_count,
+            applications_count=applications_count
+        )
     
     # Маршрут для поиска информации о школе
     @app.route('/search', methods=['POST'])
@@ -146,4 +163,4 @@ def create_app(config_name='default'):
 app = create_app()
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
