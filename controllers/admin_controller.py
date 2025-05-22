@@ -3,12 +3,13 @@ from flask_login import login_required, current_user
 from models import db
 from models.graduate import Graduate
 from models.school import School
-from models.teacher import Teacher
+from models.teacher import Teacher, TeacherSchool
 from models.application import Application
 from services.link_service import LinkService
 from services.document_service import DocumentService
 from utils.auth import admin_required
 from forms.admin_forms import GraduateForm, ApplicationFilterForm, ApplicationStatusForm, ApplicationForm
+from forms.teacher_forms import TeacherSelfRegisterForm
 
 admin_bp = Blueprint('admin_panel', __name__)
 
@@ -162,3 +163,61 @@ def teachers():
     """Просмотр всех учителей"""
     teachers = Teacher.query.all()
     return render_template('admin/teachers.html', teachers=teachers)
+@admin_bp.route('/teachers/delete/<int:teacher_id>', methods=['POST'])
+@login_required
+@admin_required
+def teacher_delete(teacher_id):
+    """Удаление учителя с учётом зависимостей"""
+    from sqlalchemy.exc import IntegrityError
+    teacher = Teacher.query.get_or_404(teacher_id)
+    try:
+        # Удаляем связанные записи TeacherSchool
+        for ts in teacher.schools:
+            db.session.delete(ts)
+        # Удаляем связанные голоса
+        for vote in teacher.votes:
+            db.session.delete(vote)
+        db.session.delete(teacher)
+        db.session.commit()
+        flash('Учитель и связанные данные удалены', 'success')
+    except IntegrityError as e:
+        db.session.rollback()
+        flash('Ошибка удаления: есть связанные объекты, которые нельзя удалить. Обратитесь к администратору.', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Не удалось удалить учителя: {str(e)}', 'danger')
+    return redirect(url_for('admin_panel.teachers'))
+
+@admin_bp.route('/teachers/edit/<int:teacher_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def teacher_edit(teacher_id):
+    """Редактирование учителя"""
+    teacher = Teacher.query.get_or_404(teacher_id)
+    # Получаем TeacherSchool (первую, если их несколько)
+    teacher_school = TeacherSchool.query.filter_by(teacher_id=teacher.id).first()
+    if not teacher_school:
+        flash('Не найдена информация о школе для этого учителя', 'danger')
+        return redirect(url_for('admin_panel.teachers'))
+
+    # Для GET: передаём данные из обеих моделей в форму
+    if request.method == 'GET':
+        form = TeacherSelfRegisterForm(
+            full_name=teacher.full_name,
+            subjects=teacher_school.subjects,
+            start_year=teacher_school.start_year,
+            end_year=teacher_school.end_year
+        )
+    else:
+        form = TeacherSelfRegisterForm()
+
+    if form.validate_on_submit():
+        teacher.full_name = form.full_name.data
+        teacher_school.subjects = form.subjects.data
+        teacher_school.start_year = form.start_year.data
+        teacher_school.end_year = form.end_year.data
+        db.session.commit()
+        flash('Данные учителя обновлены', 'success')
+        return redirect(url_for('admin_panel.teachers'))
+
+    return render_template('teacher/form.html', form=form, teacher=teacher)
