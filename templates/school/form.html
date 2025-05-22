@@ -23,6 +23,72 @@
         </div>
     </div>
 
+    {# Секция: Список учителей #}
+    {% if teachers %}
+    <h3 class="mb-3">Учителя, прикреплённые к школе</h3>
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ФИО</th>
+                    <th>Предметы</th>
+                    <th>Периоды работы</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for teacher in teachers %}
+                <tr>
+                    <td>
+                        {{ teacher.full_name or teacher.fio or teacher.name or teacher.surname ~ ' ' ~ teacher.first_name ~ ' ' ~ teacher.last_name }}
+                    </td>
+                    <td>
+                        {{ teacher.subjects }}
+                    </td>
+                    <td>
+                        {{ teacher.periods }}
+                    </td>
+                    <td>
+                        {{ teacher.email or '&mdash;' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {# Секция: Список заявок #}
+    {% if applications %}
+    <h3 class="mb-3">Заявки</h3>
+    <div class="table-responsive mb-4">
+        <table class="table table-bordered table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ФИО выпускника</th>
+                    <th>Период обучения</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for app in applications %}
+                <tr>
+                    <td>
+                        {{ app.graduate_full_name }}
+                    </td>
+                    <td>
+                        {{ app.start_year }}–{{ app.end_year }}, классы: {{ app.start_grade }}–{{ app.end_grade }}
+                    </td>
+                    <td>
+                        {{ app.status }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
     <h3 class="mb-3">Добавьте учителей, работавших в школе в указанный период</h3>
     <form method="post" id="teachersForm" autocomplete="off">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

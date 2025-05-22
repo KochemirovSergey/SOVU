@@ -2,3 +2,7 @@
 venv/bin/python3.11
 venv
 __pycache__/llm_search_school.cpython-311.pyc
+.env
+__pycache__/config.cpython-311.pyc
+controllers/__pycache__/school_controller.cpython-311.pyc
+controllers/__pycache__/teacher_controller.cpython-311.pyc
