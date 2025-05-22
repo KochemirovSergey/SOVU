@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Заполнение информации о местах работы{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Информация об учителе</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <strong>ФИО:</strong> {{ teacher.full_name }}<br>
+            {% if teacher.email %}
+            <strong>Email:</strong> {{ teacher.email }}<br>
+            {% endif %}
+        </div>
+    </div>
+
+    <h3 class="mb-3">Добавьте места работы</h3>
+    <form method="post" id="workplacesForm" autocomplete="off">
+        {{ csrf_token() }}
+        <div id="workplaces-list">
+            <div class="row g-2 mb-2 workplace-row">
+                <div class="col-md-4">
+                    <input type="text" name="school_name" class="form-control" placeholder="Название школы" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="subjects" class="form-control" placeholder="Предметы (через запятую)" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="start_year" class="form-control" placeholder="Год начала" min="1950" max="2100" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="end_year" class="form-control" placeholder="Год окончания" min="1950" max="2100" required>
+                </div>
+                <div class="col-md-1 d-flex align-items-center">
+                    <button type="button" class="btn btn-danger btn-sm remove-workplace" title="Удалить место работы">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-secondary mb-3" id="add-workplace">
+            <i class="bi bi-plus"></i> Добавить место работы
+        </button>
+        <br>
+        <button type="submit" class="btn btn-primary">Сохранить информацию</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateRemoveButtons() {
+        document.querySelectorAll('.remove-workplace').forEach(btn => {
+            btn.onclick = function() {
+                if (document.querySelectorAll('.workplace-row').length > 1) {
+                    btn.closest('.workplace-row').remove();
+                }
+            }
+        });
+    }
+
+    document.getElementById('add-workplace').onclick = function() {
+        const row = document.querySelector('.workplace-row');
+        const newRow = row.cloneNode(true);
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        document.getElementById('workplaces-list').appendChild(newRow);
+        updateRemoveButtons();
+    };
+
+    updateRemoveButtons();
+});
+</script>
+{% endblock %}

@@ -18,6 +18,8 @@ def form(token):
     school = application.school
     
     if request.method == 'POST':
+        print('DEBUG POST request.form:', request.form)
+        print('DEBUG POST request.values:', request.values)
         # Получаем данные о учителях из формы
         teacher_names = request.form.getlist('teacher_name')
         teacher_subjects = request.form.getlist('teacher_subjects')
@@ -35,12 +37,14 @@ def form(token):
                 continue
                 
             # Создаем нового учителя
+            generated_token = link_service.generate_token()
             teacher = Teacher(
                 full_name=teacher_names[i],
-                link_token=link_service.generate_token()
+                link_token=generated_token
             )
             db.session.add(teacher)
             db.session.flush()  # Получаем ID учителя
+            print(f"[DEBUG] Создан учитель: id={teacher.id}, full_name={teacher.full_name}, link_token={teacher.link_token}")
             
             # Создаем связь учителя со школой
             teacher_school = TeacherSchool(

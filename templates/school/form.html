@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Заполнение информации об учителях{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Информация о школе</h2>
+    <div class="card mb-4">
+        <div class="card-body">
+            <strong>Название:</strong> {{ school.full_name or school.name }}<br>
+            {% if school.address %}
+            <strong>Адрес:</strong> {{ school.address }}<br>
+            {% endif %}
+            {% if school.inn %}
+            <strong>ИНН:</strong> {{ school.inn }}<br>
+            {% endif %}
+            {% if school.director %}
+            <strong>Директор:</strong> {{ school.director }}<br>
+            {% endif %}
+            {% if school.email %}
+            <strong>Email:</strong> {{ school.email }}<br>
+            {% endif %}
+        </div>
+    </div>
+
+    <h3 class="mb-3">Добавьте учителей, работавших в школе в указанный период</h3>
+    <form method="post" id="teachersForm" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div id="teachers-list">
+            <div class="row g-2 mb-2 teacher-row">
+                <div class="col-md-4">
+                    <input type="text" name="teacher_name" class="form-control" placeholder="ФИО учителя" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" name="teacher_subjects" class="form-control" placeholder="Предметы (через запятую)" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="teacher_start_year" class="form-control" placeholder="Год начала" min="1950" max="2100" required>
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="teacher_end_year" class="form-control" placeholder="Год окончания" min="1950" max="2100" required>
+                </div>
+                <div class="col-md-1 d-flex align-items-center">
+                    <button type="button" class="btn btn-danger btn-sm remove-teacher" title="Удалить учителя">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-secondary mb-3" id="add-teacher">
+            <i class="bi bi-plus"></i> Добавить учителя
+        </button>
+        <br>
+        <button type="submit" class="btn btn-primary">Сохранить информацию</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function updateRemoveButtons() {
+        document.querySelectorAll('.remove-teacher').forEach(btn => {
+            btn.onclick = function() {
+                if (document.querySelectorAll('.teacher-row').length > 1) {
+                    btn.closest('.teacher-row').remove();
+                }
+            }
+        });
+    }
+
+    document.getElementById('add-teacher').onclick = function() {
+        const row = document.querySelector('.teacher-row');
+        const newRow = row.cloneNode(true);
+        newRow.querySelectorAll('input').forEach(input => input.value = '');
+        document.getElementById('teachers-list').appendChild(newRow);
+        updateRemoveButtons();
+    };
+
+    updateRemoveButtons();
+});
+</script>
+{% endblock %}

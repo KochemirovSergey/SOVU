@@ -60,11 +60,63 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
-@teacher_bp.route('/<token>', methods=['GET', 'POST'])
+@teacher_bp.route('/school/<school_token>', methods=['GET', 'POST'])
+def self_register(school_token):
+    """
+    Форма для самостоятельного заполнения учителем по ссылке для школы.
+    """
+    from models.application import Application
+    application = Application.query.filter_by(school_link_token=school_token).first_or_404()
+    school = application.school
+
+    if request.method == 'POST':
+        full_name = request.form.get('full_name')
+        email = request.form.get('email')
+        subjects = request.form.get('subjects')
+        start_year = request.form.get('start_year')
+        end_year = request.form.get('end_year')
+
+        if not full_name or not subjects or not start_year or not end_year:
+            flash('Пожалуйста, заполните все обязательные поля', 'danger')
+            return render_template('teacher/self_register.html', school=school)
+
+        # Создаём учителя
+        from services.link_service import LinkService
+        link_service = LinkService()
+        teacher = Teacher(
+            full_name=full_name,
+            email=email,
+            link_token=link_service.generate_token()
+        )
+        db.session.add(teacher)
+        db.session.flush()
+
+        # Связываем учителя со школой
+        teacher_school = TeacherSchool(
+            teacher_id=teacher.id,
+            school_id=school.id,
+            start_year=start_year,
+            end_year=end_year,
+            subjects=subjects
+        )
+        db.session.add(teacher_school)
+        db.session.commit()
+
+        flash('Информация успешно сохранена!', 'success')
+        return render_template('teacher/thank_you.html', teacher=teacher, school=school)
+
+    return render_template('teacher/self_register.html', school=school)
+@teacher_bp.route('/<token>', methods=['GET', 'POST'], endpoint='form')
 def form(token):
     """Форма для заполнения информации о местах работы"""
-    # Находим учителя по токену
-    teacher = Teacher.query.filter_by(link_token=token).first_or_404()
+    print(f"[DEBUG] Получен токен учителя: {token}")
+    teacher = Teacher.query.filter_by(link_token=token).first()
+    if teacher:
+        print(f"[DEBUG] Учитель найден: id={teacher.id}, full_name={teacher.full_name}")
+    else:
+        print("[DEBUG] Учитель с таким токеном не найден!")
+        from flask import abort
+        abort(404)
     
     if request.method == 'POST':
         # Получаем данные о школах из формы

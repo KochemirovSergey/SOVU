@@ -110,7 +110,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">Ссылка для учителей:</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" value="{{ url_for('teacher_panel.form', token=application.teacher_link_token, _external=True) }}" id="teacherLink" readonly>
+                            <input type="text" class="form-control" value="{{ url_for('teacher_panel.self_register', school_token=application.school_link_token, _external=True) }}" id="teacherLink" readonly>
                             <button class="btn btn-outline-primary" type="button" onclick="copyToClipboard('teacherLink')">
                                 <i class="bi bi-clipboard"></i>
                             </button>
