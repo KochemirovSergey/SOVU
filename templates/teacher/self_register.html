@@ -15,30 +15,26 @@
     </div>
 
     <form method="post" autocomplete="off">
-        {{ csrf_token() }}
+        {{ form.csrf_token }}
         <div class="mb-3">
-            <label for="full_name" class="form-label">ФИО учителя *</label>
-            <input type="text" name="full_name" id="full_name" class="form-control" required>
+            {{ form.full_name.label(class="form-label") }}
+            {{ form.full_name(class="form-control") }}
         </div>
         <div class="mb-3">
-            <label for="email" class="form-label">Email (необязательно)</label>
-            <input type="email" name="email" id="email" class="form-control">
-        </div>
-        <div class="mb-3">
-            <label for="subjects" class="form-label">Предметы (через запятую) *</label>
-            <input type="text" name="subjects" id="subjects" class="form-control" required>
+            {{ form.subjects.label(class="form-label") }}
+            {{ form.subjects(class="form-control") }}
         </div>
         <div class="row mb-3">
             <div class="col">
-                <label for="start_year" class="form-label">Год начала *</label>
-                <input type="number" name="start_year" id="start_year" class="form-control" min="1950" max="2100" required>
+                {{ form.start_year.label(class="form-label") }}
+                {{ form.start_year(class="form-control") }}
             </div>
             <div class="col">
-                <label for="end_year" class="form-label">Год окончания *</label>
-                <input type="number" name="end_year" id="end_year" class="form-control" min="1950" max="2100" required>
+                {{ form.end_year.label(class="form-label") }}
+                {{ form.end_year(class="form-control") }}
             </div>
         </div>
-        <button type="submit" class="btn btn-primary">Сохранить</button>
+        {{ form.submit(class="btn btn-primary") }}
     </form>
 </div>
 {% endblock %}

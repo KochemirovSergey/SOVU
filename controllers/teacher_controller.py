@@ -9,6 +9,10 @@ from services.link_service import LinkService
 from ai.document_analyzer import DocumentAnalyzer
 
 teacher_bp = Blueprint('teacher_panel', __name__)
+
+@teacher_bp.route('/self_register_success', endpoint='self_register_success')
+def self_register_success():
+    return render_template('teacher/self_register_success.html')
 @teacher_bp.route('/application/<token>', methods=['GET', 'POST'])
 def application_form(token):
     """
@@ -66,46 +70,39 @@ def self_register(school_token):
     Форма для самостоятельного заполнения учителем по ссылке для школы.
     """
     from models.application import Application
+    from forms.teacher_forms import TeacherSelfRegisterForm
     application = Application.query.filter_by(school_link_token=school_token).first_or_404()
     school = application.school
 
-    if request.method == 'POST':
-        full_name = request.form.get('full_name')
-        email = request.form.get('email')
-        subjects = request.form.get('subjects')
-        start_year = request.form.get('start_year')
-        end_year = request.form.get('end_year')
+    form = TeacherSelfRegisterForm()
 
-        if not full_name or not subjects or not start_year or not end_year:
-            flash('Пожалуйста, заполните все обязательные поля', 'danger')
-            return render_template('teacher/self_register.html', school=school)
-
-        # Создаём учителя
+    if form.validate_on_submit():
         from services.link_service import LinkService
         link_service = LinkService()
         teacher = Teacher(
-            full_name=full_name,
-            email=email,
+            full_name=form.full_name.data,
             link_token=link_service.generate_token()
         )
         db.session.add(teacher)
         db.session.flush()
 
-        # Связываем учителя со школой
         teacher_school = TeacherSchool(
             teacher_id=teacher.id,
             school_id=school.id,
-            start_year=start_year,
-            end_year=end_year,
-            subjects=subjects
+            start_year=form.start_year.data,
+            end_year=form.end_year.data,
+            subjects=form.subjects.data
         )
         db.session.add(teacher_school)
         db.session.commit()
 
         flash('Информация успешно сохранена!', 'success')
-        return render_template('teacher/thank_you.html', teacher=teacher, school=school)
+        return redirect(url_for('teacher_panel.self_register_success'))
 
-    return render_template('teacher/self_register.html', school=school)
+    if request.method == 'POST' and not form.validate():
+        flash('Пожалуйста, заполните все обязательные поля корректно', 'danger')
+
+    return render_template('teacher/self_register.html', school=school, form=form)
 @teacher_bp.route('/<token>', methods=['GET', 'POST'], endpoint='form')
 def form(token):
     """Форма для заполнения информации о местах работы"""

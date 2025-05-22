@@ -63,6 +63,13 @@ def create_app(config_name='default'):
     app.register_blueprint(teacher_bp, url_prefix='/teacher_panel')
     app.register_blueprint(auth_bp, url_prefix='/auth')
     
+    # Обработчик ошибок CSRF
+    from flask_wtf.csrf import CSRFError
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        return render_template('400.html', reason=e.description), 400
+
     # Маршрут для главной страницы
     @app.route('/', methods=['GET'])
     def index():
