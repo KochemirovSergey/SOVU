@@ -66,14 +66,7 @@ def create_app(config_name='default'):
     # Маршрут для главной страницы
     @app.route('/', methods=['GET'])
     def index():
-        # Читаем CSV файл с городами (если он существует)
-        try:
-            df = pd.read_csv('cities.csv')
-            cities_with_regions = df.apply(lambda row: f"{row['Город']} ({row['Регион']})", axis=1).tolist()
-        except:
-            cities_with_regions = []
-        
-        return render_template('index.html', cities=cities_with_regions)
+        return render_template('admin/index.html')
     
     # Маршрут для поиска информации о школе
     @app.route('/search', methods=['POST'])
