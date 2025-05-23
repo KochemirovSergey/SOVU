@@ -155,6 +155,45 @@ def schools():
     """Просмотр всех школ"""
     schools = School.query.all()
     return render_template('admin/schools.html', schools=schools)
+@admin_bp.route('/schools/delete/<int:school_id>', methods=['POST'])
+@login_required
+@admin_required
+def school_delete(school_id):
+    """Удаление школы с учётом зависимостей"""
+    school = School.query.get_or_404(school_id)
+    try:
+        # Удаляем связанные GraduateSchool
+        for gs in list(school.graduate_schools):
+            db.session.delete(gs)
+        # Удаляем связанные TeacherSchool
+        for ts in list(school.teacher_schools):
+            db.session.delete(ts)
+        # Удаляем связанные Application
+        for app in list(school.applications):
+            db.session.delete(app)
+        db.session.delete(school)
+        db.session.commit()
+        flash('Школа и связанные данные удалены', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Не удалось удалить школу: {str(e)}', 'danger')
+    return redirect(url_for('admin_panel.schools'))
+
+
+@admin_bp.route('/schools/edit/<int:school_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def school_edit(school_id):
+    """Редактирование школы"""
+    from forms.admin_forms import SchoolForm
+    school = School.query.get_or_404(school_id)
+    form = SchoolForm(obj=school)
+    if form.validate_on_submit():
+        form.populate_obj(school)
+        db.session.commit()
+        flash('Данные школы обновлены', 'success')
+        return redirect(url_for('admin_panel.schools'))
+    return render_template('admin/school_edit.html', form=form, school=school)
 
 @admin_bp.route('/teachers', methods=['GET'])
 @login_required

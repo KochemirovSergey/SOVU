@@ -41,4 +41,19 @@ class ApplicationForm(FlaskForm):
         ('completed', 'Завершена')
     ], validators=[DataRequired()])
     document_path = StringField('Путь к документу', validators=[Optional()])
+class SchoolForm(FlaskForm):
+    """Форма для создания и редактирования школы"""
+    name = StringField('Краткое название', validators=[DataRequired(), Length(max=255)])
+    full_name = StringField('Полное название', validators=[Optional(), Length(max=512)])
+    address = StringField('Адрес', validators=[Optional(), Length(max=512)])
+    inn = StringField('ИНН', validators=[Optional(), Length(max=12)])
+    director = StringField('Директор', validators=[Optional(), Length(max=255)])
+    email = StringField('Email', validators=[Optional(), Length(max=255)])
+    status = SelectField('Статус', choices=[
+        ('действующая', 'Действующая'),
+        ('ликвидирована', 'Ликвидирована')
+    ], validators=[Optional()])
+    city = StringField('Город', validators=[Optional(), Length(max=255)])
+    successor_id = IntegerField('ID правопреемника', validators=[Optional()])
+    submit = SubmitField('Сохранить')
     submit = SubmitField('Сохранить')

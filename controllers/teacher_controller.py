@@ -78,6 +78,7 @@ def self_register(school_token):
 
     if form.validate_on_submit():
         from services.link_service import LinkService
+        import uuid
         link_service = LinkService()
         teacher = Teacher(
             full_name=form.full_name.data,
@@ -85,6 +86,25 @@ def self_register(school_token):
         )
         db.session.add(teacher)
         db.session.flush()
+
+        # Обработка загрузки подтверждающего документа
+        file = form.confirm_document.data
+        if file:
+            try:
+                filename = secure_filename(file.filename)
+                ext = os.path.splitext(filename)[1]
+                unique_filename = f"{uuid.uuid4().hex}{ext}"
+                documents_dir = os.path.join('static', 'documents')
+                # Убедимся, что директория существует
+                os.makedirs(documents_dir, exist_ok=True)
+                file_path = os.path.join(documents_dir, unique_filename)
+                file.save(file_path)
+                # Сохраняем относительный путь для использования в шаблонах/БД
+                teacher.document_path = os.path.join('documents', unique_filename)
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Ошибка при загрузке файла: {str(e)}', 'danger')
+                return render_template('teacher/self_register.html', school=school, form=form)
 
         teacher_school = TeacherSchool(
             teacher_id=teacher.id,

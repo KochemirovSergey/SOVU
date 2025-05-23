@@ -1,3 +1,4 @@
+{% set hide_header = True %}
 {% extends "base.html" %}
 
 {% block title %}Регистрация учителя{% endblock %}
@@ -8,13 +9,19 @@
     <div class="card mb-4">
         <div class="card-body">
             <strong>Школа:</strong> {{ school.full_name or school.name }}<br>
+            {% if school.city %}
+            <strong>Город:</strong> {{ school.city }}<br>
+            {% endif %}
             {% if school.address %}
             <strong>Адрес:</strong> {{ school.address }}<br>
+            {% endif %}
+            {% if school.status %}
+            <strong>Статус:</strong> {{ school.status }}<br>
             {% endif %}
         </div>
     </div>
 
-    <form method="post" autocomplete="off">
+    <form method="post" autocomplete="off" enctype="multipart/form-data">
         {{ form.csrf_token }}
         <div class="mb-3">
             {{ form.full_name.label(class="form-label") }}
@@ -33,6 +40,10 @@
                 {{ form.end_year.label(class="form-label") }}
                 {{ form.end_year(class="form-control") }}
             </div>
+        </div>
+        <div class="mb-3">
+            {{ form.confirm_document.label(class="form-label") }}
+            {{ form.confirm_document(class="form-control") }}
         </div>
         {{ form.submit(class="btn btn-primary") }}
     </form>
