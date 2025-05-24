@@ -199,6 +199,7 @@ class GraduateSchool(db.Model):
     end_year = db.Column(db.Integer, nullable=False)
     start_grade = db.Column(db.Integer, nullable=False)
     end_grade = db.Column(db.Integer, nullable=False)
+    is_confirmed = db.Column(db.Boolean, default=False, nullable=False)  # Статус подтверждения связки выпускник-школа
     
     # Отношения
     graduate = db.relationship('Graduate', back_populates='schools')
@@ -211,6 +212,7 @@ class TeacherSchool(db.Model):
     start_year = db.Column(db.Integer, nullable=False)
     end_year = db.Column(db.Integer, nullable=False)
     subjects = db.Column(db.String(512))  # Предметы через запятую
+    is_confirmed = db.Column(db.Boolean, default=False, nullable=False)  # Статус подтверждения связки учитель-школа
     
     # Отношения
     teacher = db.relationship('Teacher', back_populates='schools')
@@ -467,6 +469,13 @@ def analyze_document(document_path, teacher_data):
 4. Валидация всех входных данных
 5. Защита от CSRF-атак с использованием Flask-WTF
 6. Логирование всех действий пользователей
+
+## Особенности подтверждения связей выпускник-школа и учитель-школа
+
+- Для каждой связки выпускник-школа (GraduateSchool) и учитель-школа (TeacherSchool) реализовано поле is_confirmed, отражающее статус подтверждения.
+- Изменение статуса подтверждения осуществляется через POST-запросы с передачей параметров id/link_id и link_type.
+- Контроллеры при формировании данных для шаблонов явно добавляют поле is_confirmed для каждой заявки, чтобы интерфейс мог корректно отображать состояние кнопки ("Подтвердить"/"Отменить").
+- Это обеспечивает единообразную и предсказуемую работу интерфейса для всех типов связей.
 
 ## Дополнительные компоненты
 

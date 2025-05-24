@@ -37,12 +37,8 @@
             <form method="post" autocomplete="off">
                 <div class="mb-3">
                     <label for="city" class="form-label">Город</label>
-                    <select name="city" id="city" class="form-select" required>
-                        <option value="">Выберите город из списка</option>
-                        {% for city in cities %}
-                        <option value="{{ city }}" {% if (form_data.city == city) or (selected_city == city) %}selected{% endif %}>{{ city }}</option>
-                        {% endfor %}
-                    </select>
+                    <input type="text" class="form-control" id="city" name="city"
+                        value="{{ form_data.city or selected_city or '' }}" required placeholder="Введите город">
                     {% if errors.city %}
                         <div class="text-danger">{{ errors.city }}</div>
                     {% endif %}
@@ -55,11 +51,55 @@
                         <div class="text-danger">{{ errors.school_name }}</div>
                     {% endif %}
                 </div>
-                {% if search_done %}
-                    <div class="mb-3">
-                        <label class="form-label">Информация о школе</label>
-                        <textarea class="form-control" rows="2" readonly>Заглушка</textarea>
+                <div class="mb-3">
+                    <button type="button" class="btn btn-primary" id="find_school_btn" disabled>Найти школу</button>
+                </div>
+                <div id="school_info_error" class="alert alert-danger d-none" role="alert"></div>
+                <div id="school_info_block" class="mb-3 d-none">
+                    <label class="form-label">Информация о школе</label>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label for="auto_school_name" class="form-label">Краткое название школы</label>
+                            <input type="text" class="form-control" id="auto_school_name" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_full_name" class="form-label">Полное название школы</label>
+                            <input type="text" class="form-control" id="auto_full_name" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_inn" class="form-label">ИНН</label>
+                            <input type="text" class="form-control" id="auto_inn" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_email" class="form-label">E-mail</label>
+                            <input type="text" class="form-control" id="auto_email" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_status" class="form-label">Статус</label>
+                            <input type="text" class="form-control" id="auto_status" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_address" class="form-label">Адрес</label>
+                            <input type="text" class="form-control" id="auto_address" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_director" class="form-label">Директор</label>
+                            <input type="text" class="form-control" id="auto_director" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_successor" class="form-label">Правопреемник</label>
+                            <input type="text" class="form-control" id="auto_successor" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_successor_address" class="form-label">Адрес правопреемника</label>
+                            <input type="text" class="form-control" id="auto_successor_address" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="auto_successor_director" class="form-label">Директор правопреемника</label>
+                            <input type="text" class="form-control" id="auto_successor_director" readonly>
+                        </div>
                     </div>
+                </div>
                     <div class="mb-3">
                         <label for="start_year" class="form-label">Год начала</label>
                         <select name="start_year" id="start_year" class="form-select" required>
@@ -101,9 +141,6 @@
                         {% endif %}
                     </div>
                     <button type="submit" name="action" value="confirm" class="btn btn-success">Подтвердить школу</button>
-                {% else %}
-                    <button type="submit" name="action" value="search" class="btn btn-primary">Найти</button>
-                {% endif %}
             </form>
         </div>
     </div>

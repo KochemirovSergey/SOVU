@@ -14,6 +14,8 @@ function initApp() {
     initDynamicElements();
     
     console.log('Приложение инициализировано');
+// Инициализация поиска школы для graduate/form.html
+    initGraduateSchoolSearch();
 }
 
 // Инициализация всплывающих подсказок Bootstrap
@@ -182,3 +184,104 @@ function displaySchoolSearchResults(data, container) {
 
 // Запускаем инициализацию при загрузке страницы
 document.addEventListener('DOMContentLoaded', initApp);
+/**
+ * Инициализация поиска школы по LLM для graduate/form.html
+ */
+function initGraduateSchoolSearch() {
+    const cityInput = document.getElementById('city');
+    const schoolNameInput = document.getElementById('school_name');
+    const findBtn = document.getElementById('find_school_btn');
+    const errorDiv = document.getElementById('school_info_error');
+    const infoBlock = document.getElementById('school_info_block');
+
+    const fields = {
+        school_name: document.getElementById('auto_school_name'),
+        full_name: document.getElementById('auto_full_name'),
+        inn: document.getElementById('auto_inn'),
+        email: document.getElementById('auto_email'),
+        address: document.getElementById('auto_address'),
+        director: document.getElementById('auto_director'),
+        status: document.getElementById('auto_status'),
+        successor: document.getElementById('auto_successor'),
+        successor_address: document.getElementById('auto_successor_address'),
+        successor_director: document.getElementById('auto_successor_director')
+    };
+
+    function updateBtnState() {
+        if (cityInput.value && schoolNameInput.value.trim()) {
+            findBtn.disabled = false;
+        } else {
+            findBtn.disabled = true;
+        }
+    }
+
+    function clearFields() {
+        Object.values(fields).forEach(f => f.value = '');
+        infoBlock.classList.add('d-none');
+    }
+
+    function showError(msg) {
+        errorDiv.textContent = msg;
+        errorDiv.classList.remove('d-none');
+    }
+
+    function hideError() {
+        errorDiv.textContent = '';
+        errorDiv.classList.add('d-none');
+    }
+
+    cityInput && cityInput.addEventListener('change', () => {
+        updateBtnState();
+        clearFields();
+        hideError();
+    });
+    schoolNameInput && schoolNameInput.addEventListener('input', () => {
+        updateBtnState();
+        clearFields();
+        hideError();
+    });
+
+    findBtn && findBtn.addEventListener('click', function () {
+        findBtn.disabled = true;
+        hideError();
+        clearFields();
+
+        fetch('/graduate_panel/api/school_info', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                city: cityInput.value,
+                school_name: schoolNameInput.value.trim()
+            })
+        })
+        .then(res => res.json().then(data => ({status: res.status, data})))
+        .then(({status, data}) => {
+            if (status === 200) {
+                fields.school_name.value = data.school_name || '';
+                fields.full_name.value = data.full_name || '';
+                fields.inn.value = data.inn || '';
+                fields.email.value = data.email || '';
+                fields.address.value = data.address || '';
+                fields.director.value = data.director || '';
+                fields.status.value = data.status || '';
+                fields.successor.value = data.successor || '';
+                fields.successor_address.value = data.successor_address || '';
+                fields.successor_director.value = data.successor_director || '';
+                infoBlock.classList.remove('d-none');
+            } else {
+                showError(data.error || 'Информация о школе не найдена');
+            }
+        })
+        .catch(() => {
+            showError('Информация о школе не найдена');
+        })
+        .finally(() => {
+            updateBtnState();
+        });
+    });
+
+    // Инициализация состояния
+    updateBtnState();
+    clearFields();
+    hideError();
+}

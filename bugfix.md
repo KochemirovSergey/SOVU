@@ -79,3 +79,14 @@ from models.graduate import GraduateSchool
 
 **Как проявлялось в консоли:**
 - werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'teacher_panel.self_register_success'. Did you mean 'teacher_panel.self_register' instead?
+### [23.05.2025] Подтверждение связки (is_confirmed) не работало через форму школы
+
+**Причина:**  
+POST-запрос с параметрами id, link_type, csrf_token отправлялся на /school_panel/<token>, но в коде ожидался параметр link_id, из-за чего обработка подтверждения не выполнялась. В консоли не появлялись print-логи, связанные с подтверждением.
+
+**Как проявлялось:**  
+- На странице: статус подтверждения не менялся.
+- В консоли: отсутствовали ожидаемые print-логи из confirm_link или form(token).
+
+**Решение:**  
+В функцию form(token) в [`controllers/school_controller.py`](controllers/school_controller.py:16) добавлена поддержка обоих вариантов параметра идентификатора связки: link_id и id. Теперь при отправке формы с любым из этих параметров выполняется обработка подтверждения связки с подробными print-логами на каждом этапе (выводятся оба значения, найденный объект, новое значение is_confirmed, коммит). Это устраняет проблему несовпадения имени поля и позволяет корректно менять статус подтверждения.

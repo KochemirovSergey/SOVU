@@ -20,6 +20,45 @@ qr_service = QRService()
 document_service = DocumentService()
 voting_service = VotingService()
 
+import logging
+
+@graduate_bp.route('/api/school_info', methods=['POST'])
+@csrf.exempt
+def api_school_info():
+    data = request.get_json()
+    city = (data or {}).get('city', '').strip()
+    school_name = (data or {}).get('school_name', '').strip()
+
+    # Валидация входных данных
+    if not city or not school_name:
+        return jsonify({'error': 'Некорректные параметры'}), 400
+
+    # Логирование обращения
+    logging.info(f"LLM school info request: city='{city}', school_name='{school_name}'")
+
+    try:
+        basic_info, detailed_info = get_school_info(city, school_name)
+        # Если данных нет (все поля пустые)
+        if not basic_info.name and not detailed_info.full_name:
+            return jsonify({'error': 'Информация о школе не найдена'}), 404
+
+        # Формируем ответ
+        result = {
+            'school_name': basic_info.name or detailed_info.full_name,
+            'full_name': detailed_info.full_name,
+            'inn': detailed_info.inn,
+            'email': detailed_info.email,
+            'address': detailed_info.address,
+            'director': detailed_info.director,
+            'status': basic_info.status,
+            'successor': basic_info.successor,
+            'successor_address': detailed_info.address if basic_info.status == 'ликвидирована' else '',
+            'successor_director': detailed_info.director if basic_info.status == 'ликвидирована' else ''
+        }
+        return jsonify(result)
+    except Exception as e:
+        logging.error(f"LLM school info error: {e}")
+        return jsonify({'error': 'Информация о школе не найдена'}), 500
 @graduate_bp.route('/<token>', methods=['GET', 'POST'])
 @csrf.exempt
 def form(token):
@@ -116,15 +155,51 @@ def form(token):
                     success_message=success_message
                 )
 
-            # Найти или создать школу
-            school = School.query.filter_by(name=form_data["school_name"]).first()
+            # Получить данные о школе от LLM
+            from llm_search_school import get_school_info
+            _, detailed_info = get_school_info(form_data["city"], form_data["school_name"])
+            # Поиск школы по ИНН, если есть, иначе по name+address+city
+            school = None
+            if detailed_info.inn:
+                school = School.query.filter_by(inn=detailed_info.inn).first()
             if not school:
-                school = School(name=form_data["school_name"], city=form_data["city"])
+                school = School.query.filter_by(
+                    name=form_data["school_name"],
+                    address=detailed_info.address,
+                    city=form_data["city"]
+                ).first()
+            if not school:
+                school = School(
+                    name=form_data["school_name"],
+                    full_name=detailed_info.full_name,
+                    address=detailed_info.address,
+                    inn=detailed_info.inn,
+                    director=detailed_info.director,
+                    email=detailed_info.email,
+                    city=form_data["city"]
+                )
                 db.session.add(school)
                 db.session.commit()
             else:
-                school.city = form_data["city"]
-                db.session.commit()
+                # Обновить основные поля, если они пусты
+                updated = False
+                if not school.full_name and detailed_info.full_name:
+                    school.full_name = detailed_info.full_name
+                    updated = True
+                if not school.address and detailed_info.address:
+                    school.address = detailed_info.address
+                    updated = True
+                if not school.inn and detailed_info.inn:
+                    school.inn = detailed_info.inn
+                    updated = True
+                if not school.director and detailed_info.director:
+                    school.director = detailed_info.director
+                    updated = True
+                if not school.email and detailed_info.email:
+                    school.email = detailed_info.email
+                    updated = True
+                if updated:
+                    db.session.commit()
 
             # Создать запись GraduateSchool
             gs = GraduateSchool(

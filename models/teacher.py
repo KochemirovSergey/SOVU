@@ -26,6 +26,7 @@ class TeacherSchool(db.Model):
     start_year = db.Column(db.Integer, nullable=False)
     end_year = db.Column(db.Integer, nullable=False)
     subjects = db.Column(db.String(512))  # Предметы через запятую
+    is_confirmed = db.Column(db.Boolean, default=False, nullable=False)
     
     # Отношения
     teacher = db.relationship('Teacher', back_populates='schools')

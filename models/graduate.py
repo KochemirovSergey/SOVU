@@ -26,6 +26,7 @@ class GraduateSchool(db.Model):
     end_year = db.Column(db.Integer, nullable=False)
     start_grade = db.Column(db.Integer, nullable=False)
     end_grade = db.Column(db.Integer, nullable=False)
+    is_confirmed = db.Column(db.Boolean, default=False, nullable=False)
     
     # Отношения
     graduate = db.relationship('Graduate', back_populates='schools')
