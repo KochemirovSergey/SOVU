@@ -52,54 +52,70 @@
                     {% endif %}
                 </div>
                 <div class="mb-3">
-                    <button type="button" class="btn btn-primary" id="find_school_btn" disabled>Найти школу</button>
+                    <button type="submit" name="action" value="search" class="btn btn-primary" id="find_school_btn">Найти школу</button>
                 </div>
                 <div id="school_info_error" class="alert alert-danger d-none" role="alert"></div>
-                <div id="school_info_block" class="mb-3 d-none">
-                    <label class="form-label">Информация о школе</label>
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <label for="auto_school_name" class="form-label">Краткое название школы</label>
-                            <input type="text" class="form-control" id="auto_school_name" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_full_name" class="form-label">Полное название школы</label>
-                            <input type="text" class="form-control" id="auto_full_name" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_inn" class="form-label">ИНН</label>
-                            <input type="text" class="form-control" id="auto_inn" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_email" class="form-label">E-mail</label>
-                            <input type="text" class="form-control" id="auto_email" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_status" class="form-label">Статус</label>
-                            <input type="text" class="form-control" id="auto_status" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_address" class="form-label">Адрес</label>
-                            <input type="text" class="form-control" id="auto_address" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_director" class="form-label">Директор</label>
-                            <input type="text" class="form-control" id="auto_director" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_successor" class="form-label">Правопреемник</label>
-                            <input type="text" class="form-control" id="auto_successor" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_successor_address" class="form-label">Адрес правопреемника</label>
-                            <input type="text" class="form-control" id="auto_successor_address" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="auto_successor_director" class="form-label">Директор правопреемника</label>
-                            <input type="text" class="form-control" id="auto_successor_director" readonly>
+                {% if school_chain %}
+                <div id="school_info_block" class="mb-3">
+                    <label class="form-label">Информация о найденных школах (цепочка правопреемников)</label>
+                    {% for school in school_chain %}
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        <h6>
+                            Школа {{ loop.index }}
+                            {% if loop.first %}
+                                <span class="badge bg-success">Это школа из вашей заявки</span>
+                            {% endif %}
+                        </h6>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Краткое название школы</label>
+                                <input type="text" class="form-control" value="{{ school.name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Полное название школы</label>
+                                <input type="text" class="form-control" value="{{ school.full_name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">ИНН</label>
+                                <input type="text" class="form-control" value="{{ school.inn }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">E-mail</label>
+                                <input type="text" class="form-control" value="{{ school.email }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Телефон</label>
+                                <input type="text" class="form-control" value="{{ school.phone }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Статус</label>
+                                <input type="text" class="form-control" value="{{ school.status }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Адрес</label>
+                                <input type="text" class="form-control" value="{{ school.address }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Директор</label>
+                                <input type="text" class="form-control" value="{{ school.director }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Правопреемник (название)</label>
+                                <input type="text" class="form-control" value="{{ school.successor_name }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Правопреемник (ИНН)</label>
+                                <input type="text" class="form-control" value="{{ school.successor_inn }}" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Правопреемник (адрес)</label>
+                                <input type="text" class="form-control" value="{{ school.successor_address }}" readonly>
+                            </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
+                {% endif %}
                     <div class="mb-3">
                         <label for="start_year" class="form-label">Год начала</label>
                         <select name="start_year" id="start_year" class="form-select" required>

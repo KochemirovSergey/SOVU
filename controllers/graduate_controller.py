@@ -8,7 +8,7 @@ from services.link_service import LinkService
 from services.qr_service import QRService
 from services.document_service import DocumentService
 from services.voting_service import VotingService
-from llm_search_school import get_school_info
+# from llm_search_school import get_school_info
 
 from extensions import csrf
 
@@ -103,8 +103,11 @@ def form(token):
                 errors["city"] = "Выберите город"
             if not form_data["school_name"]:
                 errors["school_name"] = "Введите название школы"
+            school_chain = None
             if not errors:
                 search_done = True
+                from llm_search_school import extract_school_chain
+                school_chain = extract_school_chain(form_data["city"], form_data["school_name"])
             return render_template(
                 'graduate/form.html',
                 graduate=graduate,
@@ -113,7 +116,8 @@ def form(token):
                 form_data=form_data,
                 errors=errors,
                 search_done=search_done,
-                success_message=success_message
+                success_message=success_message,
+                school_chain=school_chain
             )
 
         # Если подтверждение школы
@@ -155,56 +159,58 @@ def form(token):
                     success_message=success_message
                 )
 
-            # Получить данные о школе от LLM
-            from llm_search_school import get_school_info
-            _, detailed_info = get_school_info(form_data["city"], form_data["school_name"])
-            # Поиск школы по ИНН, если есть, иначе по name+address+city
-            school = None
-            if detailed_info.inn:
-                school = School.query.filter_by(inn=detailed_info.inn).first()
-            if not school:
-                school = School.query.filter_by(
-                    name=form_data["school_name"],
-                    address=detailed_info.address,
-                    city=form_data["city"]
-                ).first()
-            if not school:
-                school = School(
-                    name=form_data["school_name"],
-                    full_name=detailed_info.full_name,
-                    address=detailed_info.address,
-                    inn=detailed_info.inn,
-                    director=detailed_info.director,
-                    email=detailed_info.email,
-                    city=form_data["city"]
-                )
-                db.session.add(school)
-                db.session.commit()
-            else:
-                # Обновить основные поля, если они пусты
-                updated = False
-                if not school.full_name and detailed_info.full_name:
-                    school.full_name = detailed_info.full_name
-                    updated = True
-                if not school.address and detailed_info.address:
-                    school.address = detailed_info.address
-                    updated = True
-                if not school.inn and detailed_info.inn:
-                    school.inn = detailed_info.inn
-                    updated = True
-                if not school.director and detailed_info.director:
-                    school.director = detailed_info.director
-                    updated = True
-                if not school.email and detailed_info.email:
-                    school.email = detailed_info.email
-                    updated = True
-                if updated:
-                    db.session.commit()
+            # Получить цепочку школ от LLM
+            from llm_search_school import extract_school_chain
+            school_chain = extract_school_chain(form_data["city"], form_data["school_name"])
 
-            # Создать запись GraduateSchool
+            # Сохраняем все школы из цепочки, выставляем is_application только для первой
+            db_schools = []
+            for idx, school_data in enumerate(school_chain):
+                school = None
+                if school_data.inn:
+                    school = School.query.filter_by(inn=school_data.inn).first()
+                if not school:
+                    school = School(
+                        name=school_data.name,
+                        full_name=school_data.full_name,
+                        address=school_data.address,
+                        inn=school_data.inn,
+                        director=school_data.director,
+                        email=school_data.email,
+                        phone=school_data.phone,
+                        status=school_data.status,
+                        city=form_data["city"],
+                        successor_name=school_data.successor_name,
+                        successor_inn=school_data.successor_inn,
+                        successor_address=school_data.successor_address,
+                        is_application=(idx == 0)
+                    )
+                    db.session.add(school)
+                    db.session.flush()  # Получить id для связи
+                else:
+                    # Обновить все поля и is_application
+                    school.name = school_data.name
+                    school.full_name = school_data.full_name
+                    school.address = school_data.address
+                    school.inn = school_data.inn
+                    school.director = school_data.director
+                    school.email = school_data.email
+                    school.phone = school_data.phone
+                    school.status = school_data.status
+                    school.city = form_data["city"]
+                    school.successor_name = school_data.successor_name
+                    school.successor_inn = school_data.successor_inn
+                    school.successor_address = school_data.successor_address
+                    school.is_application = (idx == 0)
+                    db.session.flush()
+                db_schools.append(school)
+            db.session.commit()
+
+            # Создать запись GraduateSchool и Application только для первой школы (из заявки)
+            main_school = db_schools[0]
             gs = GraduateSchool(
                 graduate_id=graduate.id,
-                school_id=school.id,
+                school_id=main_school.id,
                 start_year=form_data["start_year"],
                 end_year=form_data["end_year"],
                 start_grade=form_data["start_grade"],
@@ -213,10 +219,9 @@ def form(token):
             db.session.add(gs)
             db.session.commit()
 
-            # === СОЗДАНИЕ ЗАЯВКИ (Application) ===
             application = Application(
                 graduate_id=graduate.id,
-                school_id=school.id,
+                school_id=main_school.id,
                 start_year=form_data["start_year"],
                 end_year=form_data["end_year"],
                 start_grade=form_data["start_grade"],
@@ -232,11 +237,9 @@ def form(token):
             link_service.generate_school_link(application.id)
             link_service.generate_teacher_link(application.id)
             db.session.commit()
-            # === КОНЕЦ БЛОКА СОЗДАНИЯ ЗАЯВКИ ===
 
             success_message = "Школа успешно добавлена"
             search_done = True
-            # Оставляем значения в форме
             return render_template(
                 'graduate/form.html',
                 graduate=graduate,

@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Dict, Optional
+from typing import List, Optional
 from langchain_openai import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.output_parsers import JsonOutputParser
@@ -16,21 +16,20 @@ os.environ["LANGCHAIN_API_KEY"] = "lsv2_pt_e47421e550c3436c8d634ea6be048e46_8a27
 os.environ["LANGCHAIN_PROJECT"] = "pr-untimely-licorice-46"
 os.environ["TAVILY_API_KEY"] = "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"
 
-# Модель данных для базовой информации о школе
-class SchoolBasicInfo(BaseModel):
-    name: str = Field(default="", description="Название школы")
-    status: str = Field(default="", description="Статус школы (строго 'ликвидирована' или 'действующая')")
-    successor: str = Field(default="", description="Правопреемник (название организации или 'отсутствует')")
-
-# Модель данных для детальной информации о школе
-class SchoolDetailedInfo(BaseModel):
+# Новая модель данных для полной информации о школе
+class School(BaseModel):
+    name: str = Field(default="", description="Краткое название школы")
     full_name: str = Field(default="", description="Полное название школы")
     address: str = Field(default="", description="Полный адрес школы")
     inn: str = Field(default="", description="ИНН школы")
     director: str = Field(default="", description="ФИО директора")
     email: str = Field(default="", description="Официальная почта школы")
+    phone: str = Field(default="", description="Официальный номер телефона школы")
+    status: str = Field(default="", description="Статус школы (строго 'ликвидирована' или 'действующая')")
+    successor_name: Optional[str] = Field(default=None, description="Название правопреемника (если ликвидирована)")
+    successor_inn: Optional[str] = Field(default=None, description="ИНН правопреемника (если ликвидирована)")
+    successor_address: Optional[str] = Field(default=None, description="Адрес правопреемника (если ликвидирована)")
 
-# Инициализация LLM и поискового API
 llm = ChatOpenAI(
     model="gpt-4o", 
     base_url="https://api.aitunnel.ru/v1/",
@@ -40,151 +39,105 @@ llm = ChatOpenAI(
 search = TavilySearchResults()
 console = Console()
 
-# Инициализация парсеров JSON
-basic_parser = JsonOutputParser(pydantic_object=SchoolBasicInfo)
-detailed_parser = JsonOutputParser(pydantic_object=SchoolDetailedInfo)
+school_parser = JsonOutputParser(pydantic_object=School)
 
-def get_user_input() -> tuple[str, str]:
+def get_user_input() -> tuple[str, str, Optional[str]]:
     """Получение входных данных от пользователя"""
     city = input("Введите город: ").strip()
     school_name = input("Введите название школы: ").strip()
-    return city, school_name
+    inn = input("Введите ИНН (опционально): ").strip()
+    return city, school_name, inn if inn else None
 
-def search_school_info(city: str, school_name: str) -> list[Dict]:
+def search_school_info(city: str, school_name: str, inn: Optional[str] = None) -> list:
     """Поиск информации о школе через Tavily API"""
-    query = f"школа {school_name} {city} правопреемник инн"
+    query = f"школа {school_name} {city}"
+    if inn:
+        query += f" {inn}"
+    query += " правопреемник"
     search_results = search.invoke(query)
     return search_results
 
-def process_basic_info(results: list[Dict]) -> SchoolBasicInfo:
-    """Обработка результатов поиска для получения базовой информации"""
+def extract_school_info_from_llm(search_results: list) -> School:
+    """Извлечение полной информации о школе через LLM"""
     prompt = PromptTemplate(
-        template="""Проанализируй следующие результаты поиска и извлеки базовую информацию о школе.
-        Статус должен быть строго 'ликвидирована' или 'действующая'.
-        Если школа ликвидирована, укажи правопреемника. Если действующая - укажи 'отсутствует'.
-        
-        Результаты поиска:
-        {search_results}
-        
-        {format_instructions}
-        """,
+        template="""
+Проанализируй следующие результаты поиска и извлеки информацию о школе. 
+Заполни все поля строго по формату. Если информация отсутствует, оставь поле пустым.
+Статус должен быть строго 'ликвидирована' или 'действующая'.
+Если школа ликвидирована, обязательно попытайся извлечь сведения о правопреемнике (название, ИНН, адрес).
+
+Результаты поиска:
+{search_results}
+
+{format_instructions}
+""",
         input_variables=["search_results"],
-        partial_variables={"format_instructions": basic_parser.get_format_instructions()}
+        partial_variables={"format_instructions": school_parser.get_format_instructions()}
     )
-    
-    chain = prompt | llm | basic_parser
-    
+    chain = prompt | llm | school_parser
     try:
-        response = chain.invoke({"search_results": json.dumps(results, ensure_ascii=False, indent=2)})
+        response = chain.invoke({"search_results": json.dumps(search_results, ensure_ascii=False, indent=2)})
         if isinstance(response, dict):
-            return SchoolBasicInfo(**response)
+            return School(**response)
         return response
     except Exception as e:
-        console.print(f"[red]Ошибка при обработке базовой информации: {str(e)}[/red]")
-        return SchoolBasicInfo()
+        console.print(f"[red]Ошибка при обработке информации о школе: {str(e)}[/red]")
+        return School()
 
-def process_detailed_info(results: list[Dict]) -> SchoolDetailedInfo:
-    """Обработка результатов поиска для получения детальной информации"""
-    prompt = PromptTemplate(
-        template="""Проанализируй следующие результаты поиска и извлеки детальную информацию о школе.
-        Если какая-то информация не найдена, оставь поле пустым.
-        
-        Результаты поиска:
-        {search_results}
-        
-        {format_instructions}
-        """,
-        input_variables=["search_results"],
-        partial_variables={"format_instructions": detailed_parser.get_format_instructions()}
-    )
-    
-    chain = prompt | llm | detailed_parser
-    
-    try:
-        response = chain.invoke({"search_results": json.dumps(results, ensure_ascii=False, indent=2)})
-        if isinstance(response, dict):
-            return SchoolDetailedInfo(**response)
-        return response
-    except Exception as e:
-        console.print(f"[red]Ошибка при обработке детальной информации: {str(e)}[/red]")
-        return SchoolDetailedInfo()
-
-def display_results(basic_info: SchoolBasicInfo, detailed_info: SchoolDetailedInfo):
-    """Отображение результатов в виде двух таблиц"""
-    # Таблица с базовой информацией
-    basic_table = Table(title="Базовая информация о школе")
-    basic_table.add_column("Параметр", style="cyan")
-    basic_table.add_column("Значение", style="green")
-    
-    basic_table.add_row("Название", basic_info.name)
-    basic_table.add_row("Статус", basic_info.status)
-    basic_table.add_row("Правопреемник", basic_info.successor)
-    
-    console.print(basic_table)
-    console.print("\n")
-    
-    # Таблица с детальной информацией
-    detailed_table = Table(title="Детальная информация")
-    detailed_table.add_column("Параметр", style="cyan")
-    detailed_table.add_column("Значение", style="green")
-    
-    detailed_table.add_row("Полное название", detailed_info.full_name)
-    detailed_table.add_row("Адрес", detailed_info.address)
-    detailed_table.add_row("ИНН", detailed_info.inn)
-    detailed_table.add_row("Директор", detailed_info.director)
-    detailed_table.add_row("Почта", detailed_info.email)
-    
-    console.print(detailed_table)
-
-def get_school_info(city: str, school_name: str) -> tuple[SchoolBasicInfo, SchoolDetailedInfo]:
+def extract_school_chain(city: str, school_name: str, inn: Optional[str] = None, seen_inns=None) -> List[School]:
     """
-    Получение информации о школе по городу и названию.
-    
-    Args:
-        city (str): Название города
-        school_name (str): Название школы
-        
-    Returns:
-        tuple[SchoolBasicInfo, SchoolDetailedInfo]: Кортеж с базовой и детальной информацией о школе
+    Рекурсивно извлекает цепочку школ (от ликвидированной до действующей).
+    seen_inns — защита от зацикливания по ИНН.
     """
-    try:
-        # Ищем базовую информацию
-        search_results = search_school_info(city, school_name)
-        basic_info = process_basic_info(search_results)
-        
-        # В зависимости от статуса школы
-        if basic_info.status == "действующая":
-            # Для действующей школы используем те же результаты поиска
-            detailed_info = process_detailed_info(search_results)
-        else:
-            # Для ликвидированной школы ищем информацию о правопреемнике
-            successor_results = search_school_info(city, basic_info.successor)
-            detailed_info = process_detailed_info(successor_results)
-            
-        return basic_info, detailed_info
-        
-    except Exception as e:
-        console.print(f"[red]Произошла ошибка: {str(e)}[/red]")
-        return SchoolBasicInfo(), SchoolDetailedInfo()
+    if seen_inns is None:
+        seen_inns = set()
+    search_results = search_school_info(city, school_name, inn)
+    school = extract_school_info_from_llm(search_results)
+    chain = [school]
+    # Защита от зацикливания
+    if school.inn and school.inn in seen_inns:
+        return chain
+    if school.inn:
+        seen_inns.add(school.inn)
+    # Если школа ликвидирована и есть сведения о правопреемнике — рекурсивно ищем дальше
+    if (
+        school.status.strip().lower() == "ликвидирована"
+        and (school.successor_name or school.successor_inn)
+    ):
+        next_name = school.successor_name or ""
+        next_inn = school.successor_inn or None
+        # Для рекурсии используем тот же город, successor_name и successor_inn
+        chain += extract_school_chain(city, next_name, next_inn, seen_inns)
+    return chain
+
+def display_school_chain(chain: List[School]):
+    """Отображение цепочки школ в виде таблицы"""
+    for idx, school in enumerate(chain, 1):
+        table = Table(title=f"Школа {idx}")
+        table.add_column("Параметр", style="cyan")
+        table.add_column("Значение", style="green")
+        table.add_row("Краткое название", school.name)
+        table.add_row("Полное название", school.full_name)
+        table.add_row("Адрес", school.address)
+        table.add_row("ИНН", school.inn)
+        table.add_row("Директор", school.director)
+        table.add_row("Почта", school.email)
+        table.add_row("Телефон", school.phone)
+        table.add_row("Статус", school.status)
+        table.add_row("Правопреемник (название)", school.successor_name or "")
+        table.add_row("Правопреемник (ИНН)", school.successor_inn or "")
+        table.add_row("Правопреемник (адрес)", school.successor_address or "")
+        console.print(table)
+        console.print("\n")
 
 def main():
     """Основная функция программы"""
     try:
-        # Получаем входные данные
-        city, school_name = get_user_input()
-        
-        # Получаем информацию о школе
-        basic_info, detailed_info = get_school_info(city, school_name)
-        
-        # Отображаем результаты
-        display_results(basic_info, detailed_info)
-        
+        city, school_name, inn = get_user_input()
+        chain = extract_school_chain(city, school_name, inn)
+        display_school_chain(chain)
     except Exception as e:
         console.print(f"[red]Произошла ошибка: {str(e)}[/red]")
 
 if __name__ == "__main__":
     main()
-
-
-
-

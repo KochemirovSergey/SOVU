@@ -5,7 +5,7 @@ import os
 import traceback
 
 from config import config
-from llm_search_school import get_school_info
+# from llm_search_school import get_school_info
 from extensions import db, login_manager, csrf, admin, SecureModelView
 
 def create_app(config_name='default'):
@@ -15,6 +15,8 @@ def create_app(config_name='default'):
     
     # Инициализация расширений с приложением
     db.init_app(app)
+    from flask_migrate import Migrate
+    migrate = Migrate(app, db)
     login_manager.init_app(app)
     csrf.init_app(app)
     admin.init_app(app)
