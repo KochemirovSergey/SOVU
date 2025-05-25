@@ -16,8 +16,14 @@
                 <tr>
                     <th>ID</th>
                     <th>Название</th>
+                    <th>Полное название</th>
+                    <th>Город</th>
+                    <th>ИНН</th>
+                    <th>Email</th>
+                    <th>Телефон</th>
                     <th>Адрес</th>
                     <th>Директор</th>
+                    <th>Правопреемник</th>
                     <th>Выпускники</th>
                     <th>Периоды</th>
                     <th>Статус</th>
@@ -28,9 +34,25 @@
                 {% for school in schools %}
                 <tr>
                     <td>{{ school.id }}</td>
-                    <td>{{ school.name }}</td>
+                    <td>{{ school.name or '' }}</td>
+                    <td>{{ school.full_name or '' }}</td>
+                    <td>{{ school.city or '' }}</td>
+                    <td>{{ school.inn or '' }}</td>
+                    <td>{{ school.email or '' }}</td>
+                    <td>{{ school.phone or '' }}</td>
                     <td>{{ school.address or '' }}</td>
                     <td>{{ school.director or '' }}</td>
+                    <td>
+                        {% if school.successor_name or school.successor_inn or school.successor_address %}
+                            <div>
+                                {% if school.successor_name %}<div><b>Название:</b> {{ school.successor_name }}</div>{% endif %}
+                                {% if school.successor_inn %}<div><b>ИНН:</b> {{ school.successor_inn }}</div>{% endif %}
+                                {% if school.successor_address %}<div><b>Адрес:</b> {{ school.successor_address }}</div>{% endif %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if school.graduate_schools %}
                             {% for gs in school.graduate_schools %}

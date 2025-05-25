@@ -165,10 +165,23 @@ def form(token):
 
             # Сохраняем все школы из цепочки, выставляем is_application только для первой
             db_schools = []
+            main_school = None
+            main_school_idx = None
+
+            # Найти первую "действующую" школу в цепочке
             for idx, school_data in enumerate(school_chain):
+                if str(school_data.status).strip().lower() == "действующая" and main_school is None:
+                    main_school_idx = idx
+                # Сохраняем все школы в БД (если их нет)
                 school = None
                 if school_data.inn:
                     school = School.query.filter_by(inn=school_data.inn).first()
+                if not school and school_data.inn:
+                    # Если не нашли по ИНН, пробуем по name+address
+                    school = School.query.filter_by(name=school_data.name, address=school_data.address).first()
+                elif not school:
+                    # Если нет ИНН, ищем только по name+address
+                    school = School.query.filter_by(name=school_data.name, address=school_data.address).first()
                 if not school:
                     school = School(
                         name=school_data.name,
@@ -183,10 +196,10 @@ def form(token):
                         successor_name=school_data.successor_name,
                         successor_inn=school_data.successor_inn,
                         successor_address=school_data.successor_address,
-                        is_application=(idx == 0)
+                        is_application=False
                     )
                     db.session.add(school)
-                    db.session.flush()  # Получить id для связи
+                    db.session.flush()
                 else:
                     # Обновить все поля и is_application
                     school.name = school_data.name
@@ -201,44 +214,64 @@ def form(token):
                     school.successor_name = school_data.successor_name
                     school.successor_inn = school_data.successor_inn
                     school.successor_address = school_data.successor_address
-                    school.is_application = (idx == 0)
+                    school.is_application = False
                     db.session.flush()
                 db_schools.append(school)
             db.session.commit()
 
-            # Создать запись GraduateSchool и Application только для первой школы (из заявки)
-            main_school = db_schools[0]
-            gs = GraduateSchool(
+            # Всегда создаём GraduateSchool для выбранной пользователем школы (первый элемент цепочки)
+            gs_selected = GraduateSchool(
                 graduate_id=graduate.id,
-                school_id=main_school.id,
+                school_id=db_schools[0].id,
                 start_year=form_data["start_year"],
                 end_year=form_data["end_year"],
                 start_grade=form_data["start_grade"],
                 end_grade=form_data["end_grade"]
             )
-            db.session.add(gs)
+            db.session.add(gs_selected)
             db.session.commit()
 
-            application = Application(
-                graduate_id=graduate.id,
-                school_id=main_school.id,
-                start_year=form_data["start_year"],
-                end_year=form_data["end_year"],
-                start_grade=form_data["start_grade"],
-                end_grade=form_data["end_grade"],
-                school_link_token="",  # временно пусто
-                teacher_link_token=""  # временно пусто
-            )
-            db.session.add(application)
-            db.session.commit()
+            # Проверяем наличие действующей школы
+            if main_school_idx is not None:
+                main_school = db_schools[main_school_idx]
+                # Если действующая школа отличается от выбранной — создаём связь и для неё
+                if main_school_idx != 0:
+                    gs_active = GraduateSchool(
+                        graduate_id=graduate.id,
+                        school_id=main_school.id,
+                        start_year=form_data["start_year"],
+                        end_year=form_data["end_year"],
+                        start_grade=form_data["start_grade"],
+                        end_grade=form_data["end_grade"]
+                    )
+                    db.session.add(gs_active)
+                    db.session.commit()
+                # Создаём заявку только для действующей школы
+                application = Application(
+                    graduate_id=graduate.id,
+                    school_id=main_school.id,
+                    start_year=form_data["start_year"],
+                    end_year=form_data["end_year"],
+                    start_grade=form_data["start_grade"],
+                    end_grade=form_data["end_grade"],
+                    school_link_token="",
+                    teacher_link_token=""
+                )
+                db.session.add(application)
+                db.session.commit()
 
-            # Генерация токенов для заявки
-            link_service = LinkService()
-            link_service.generate_school_link(application.id)
-            link_service.generate_teacher_link(application.id)
-            db.session.commit()
+                # Генерация токенов для заявки
+                link_service = LinkService()
+                link_service.generate_school_link(application.id)
+                link_service.generate_teacher_link(application.id)
+                db.session.commit()
 
-            success_message = "Школа успешно добавлена"
+                success_message = "Школа успешно добавлена"
+            else:
+                # Если действующей школы нет — GraduateSchool для выбранной уже создан, Application не создаём
+                errors["school_name"] = "Не удалось найти действующую школу в цепочке. Заявка не создана."
+                success_message = None
+
             search_done = True
             return render_template(
                 'graduate/form.html',

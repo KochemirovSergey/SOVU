@@ -80,7 +80,7 @@
                 <tr>
                     <th>ФИО выпускника</th>
                     <th>Период обучения</th>
-                    <th>Статус</th>
+                    <th>Школа выпускника</th>
                     <th>Подтверждение</th>
                 </tr>
             </thead>
@@ -94,13 +94,14 @@
                         {{ app.start_year }}–{{ app.end_year }}, классы: {{ app.start_grade }}–{{ app.end_grade }}
                     </td>
                     <td>
-                        {{ app.status }}
+                        {{ app.graduate_school_name or '—' }}<br>
+                        <small>{{ app.graduate_school_address or '' }}</small>
                     </td>
                     <td>
                         <form method="post" style="display:inline;">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="id" value="{{ app.id }}">
-                            <input type="hidden" name="link_id" value="{{ app.graduate_id }}">
+                            <input type="hidden" name="link_id" value="{{ app.graduate_school_id }}">
                             <input type="hidden" name="link_type" value="graduate">
                             {% if app.is_confirmed %}
                                 <button type="submit" class="btn btn-success btn-sm">Отменить</button>

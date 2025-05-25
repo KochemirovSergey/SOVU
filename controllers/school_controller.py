@@ -28,8 +28,8 @@ def form(token):
     application_dicts = []
     for app in applications:
         grad = app.graduate
-        # Получаем связку GraduateSchool для определения статуса подтверждения
-        gs = GraduateSchool.query.filter_by(graduate_id=app.graduate_id, school_id=app.school_id).first()
+        # Получаем связку GraduateSchool только для выбранной пользователем школы (той, что указана у выпускника)
+        gs = GraduateSchool.query.filter_by(graduate_id=app.graduate_id).first()
         application_dicts.append({
             'id': app.id,
             'graduate_id': app.graduate_id,
@@ -40,6 +40,9 @@ def form(token):
             'end_grade': app.end_grade,
             'status': app.status,
             'is_confirmed': gs.is_confirmed if gs else False,
+            'graduate_school_id': gs.id if gs else None,
+            'graduate_school_name': gs.school.name if gs and gs.school else '',
+            'graduate_school_address': gs.school.address if gs and gs.school else '',
         })
 
     if request.method == 'POST':
