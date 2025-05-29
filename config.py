@@ -23,7 +23,7 @@ class Config:
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
     
     # Настройки для приложения
-    BASE_URL = os.environ.get('BASE_URL') or 'http://90.156.155.132'
+    BASE_URL = os.environ.get('BASE_URL') or 'https://фондблагодарность.рф'
     
     @staticmethod
     def init_app(app):
