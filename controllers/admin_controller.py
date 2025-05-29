@@ -82,6 +82,11 @@ def graduate_edit(id):
 def graduate_delete(id):
     """Удаление выпускника"""
     graduate = Graduate.query.get_or_404(id)
+    # Логируем связанные GraduateSchool перед удалением
+    print(f"Graduate {graduate.id} связан с GraduateSchool: {[gs.id for gs in graduate.schools]}")
+    # Удаляем все связанные GraduateSchool
+    for gs in list(graduate.schools):
+        db.session.delete(gs)
     db.session.delete(graduate)
     db.session.commit()
     flash('Выпускник удален', 'success')
@@ -147,6 +152,19 @@ def application_document(id):
             flash('Документ успешно сгенерирован', 'success')
     
     return render_template('admin/application_document.html', application=application)
+@admin_bp.route('/applications/<int:id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_application(id):
+    """Удаление заявки"""
+    application = Application.query.get(id)
+    if not application:
+        flash('Заявка не найдена', 'danger')
+        return redirect(url_for('admin_panel.applications'))
+    db.session.delete(application)
+    db.session.commit()
+    flash('Заявка удалена', 'success')
+    return redirect(url_for('admin_panel.applications'))
 
 @admin_bp.route('/schools', methods=['GET'])
 @login_required
