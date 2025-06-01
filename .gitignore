@@ -7,3 +7,10 @@ __pycache__/config.cpython-311.pyc
 controllers/__pycache__/school_controller.cpython-311.pyc
 controllers/__pycache__/teacher_controller.cpython-311.pyc
 tests/screenshots/
+controllers/__pycache__/
+models/__pycache__/
+forms/__pycache__/
+models/__pycache__/
+models/__pycache__/
+services/__pycache__/
+__pycache__/

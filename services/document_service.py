@@ -55,8 +55,7 @@ class DocumentService:
         text.add_run(
             f"В рамках проекта по сбору информации о выпускниках и учителях, "
             f"выпускник Вашей школы {application.graduate.full_name} "
-            f"указал, что обучался в Вашей школе с {application.start_year} по {application.end_year} год "
-            f"(с {application.start_grade} по {application.end_grade} класс).\n\n"
+            f"указал, что обучался в Вашей школе с {application.start_year} по {application.end_year} год.\n\n"
             f"Просим Вас подтвердить данную информацию и предоставить список учителей, "
             f"которые работали в школе в указанный период.\n\n"
             f"Для заполнения информации, пожалуйста, перейдите по следующей ссылке:"

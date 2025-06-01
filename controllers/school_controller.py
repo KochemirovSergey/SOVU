@@ -36,8 +36,6 @@ def form(token):
             'graduate_full_name': grad.full_name if grad else '',
             'start_year': app.start_year,
             'end_year': app.end_year,
-            'start_grade': app.start_grade,
-            'end_grade': app.end_grade,
             'status': app.status,
             'is_confirmed': gs.is_confirmed if gs else False,
             'graduate_school_id': gs.id if gs else None,

@@ -24,8 +24,6 @@ class GraduateSchool(db.Model):
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     start_year = db.Column(db.Integer, nullable=False)
     end_year = db.Column(db.Integer, nullable=False)
-    start_grade = db.Column(db.Integer, nullable=False)
-    end_grade = db.Column(db.Integer, nullable=False)
     is_confirmed = db.Column(db.Boolean, default=False, nullable=False)
     
     # Отношения

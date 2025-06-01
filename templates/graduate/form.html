@@ -13,7 +13,7 @@
                 {% for gs in graduate.schools %}
                     <li>
                         {{ gs.school.name if gs.school else '—' }}
-                        ({{ gs.start_year }}–{{ gs.end_year }}, {{ gs.start_grade }}–{{ gs.end_grade }} класс)
+                        ({{ gs.start_year }}–{{ gs.end_year }})
                         <form method="post" action="{{ url_for('graduate_panel.delete_school', token=graduate.link_token, school_id=gs.id) }}" style="display:inline;">
                             <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Удалить школу?');">Удалить</button>
                         </form>
@@ -138,22 +138,6 @@
                         </select>
                         {% if errors.end_year %}
                             <div class="text-danger">{{ errors.end_year }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="start_grade" class="form-label">Класс начала</label>
-                        <input type="number" class="form-control" id="start_grade" name="start_grade"
-                            min="1" max="11" value="{{ form_data.start_grade or '' }}" required>
-                        {% if errors.start_grade %}
-                            <div class="text-danger">{{ errors.start_grade }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="end_grade" class="form-label">Класс окончания</label>
-                        <input type="number" class="form-control" id="end_grade" name="end_grade"
-                            min="1" max="11" value="{{ form_data.end_grade or '' }}" required>
-                        {% if errors.end_grade %}
-                            <div class="text-danger">{{ errors.end_grade }}</div>
                         {% endif %}
                     </div>
                     <button type="submit" name="action" value="confirm" class="btn btn-success">Подтвердить школу</button>

@@ -8,8 +8,6 @@ class Application(db.Model):
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     start_year = db.Column(db.Integer, nullable=False)
     end_year = db.Column(db.Integer, nullable=False)
-    start_grade = db.Column(db.Integer, nullable=False)
-    end_grade = db.Column(db.Integer, nullable=False)
     school_link_token = db.Column(db.String(64), unique=True, nullable=False)
     teacher_link_token = db.Column(db.String(64), unique=True, nullable=False)
     document_path = db.Column(db.String(512))  # Путь к сгенерированному письму
