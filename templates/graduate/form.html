@@ -33,7 +33,8 @@
                     {{ success_message }}
                 </div>
             {% endif %}
-            <form method="post" autocomplete="off">
+            <form method="post" autocomplete="off" action="{{ url_for('graduate_panel.search_school', token=graduate.link_token) }}">
+                {{ form.hidden_tag() }}
                 <div class="mb-3">
                     <label for="city" class="form-label">Город</label>
                     <input type="text" class="form-control" id="city" name="city"
@@ -51,97 +52,129 @@
                     {% endif %}
                 </div>
                 <div class="mb-3">
-                    <button type="submit" name="action" value="search" class="btn btn-primary" id="find_school_btn">Найти школу</button>
+                    <label for="start_year" class="form-label">Год начала обучения</label>
+                    <input type="number" class="form-control" id="start_year" name="start_year"
+                        value="{{ form_data.start_year or '' }}" required min="1900" max="2100" placeholder="Например: 2010">
+                    {% if errors.start_year %}
+                        <div class="text-danger">{{ errors.start_year }}</div>
+                    {% endif %}
                 </div>
-                <div id="school_info_error" class="alert alert-danger d-none" role="alert"></div>
-                {% if school_chain %}
-                <div id="school_info_block" class="mb-3">
-                    <label class="form-label">Информация о найденных школах (цепочка правопреемников)</label>
-                    {% for school in school_chain %}
-                    <div class="border rounded p-3 mb-3 bg-light">
-                        <h6>
-                            Школа {{ loop.index }}
-                            {% if loop.first %}
-                                <span class="badge bg-success">Это школа из вашей заявки</span>
-                            {% endif %}
-                        </h6>
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <label class="form-label">Краткое название школы</label>
-                                <input type="text" class="form-control" value="{{ school.name }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Полное название школы</label>
-                                <input type="text" class="form-control" value="{{ school.full_name }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">ИНН</label>
-                                <input type="text" class="form-control" value="{{ school.inn }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">E-mail</label>
-                                <input type="text" class="form-control" value="{{ school.email }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Телефон</label>
-                                <input type="text" class="form-control" value="{{ school.phone }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Статус</label>
-                                <input type="text" class="form-control" value="{{ school.status }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Адрес</label>
-                                <input type="text" class="form-control" value="{{ school.address }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Директор</label>
-                                <input type="text" class="form-control" value="{{ school.director }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Правопреемник (название)</label>
-                                <input type="text" class="form-control" value="{{ school.successor_name }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Правопреемник (ИНН)</label>
-                                <input type="text" class="form-control" value="{{ school.successor_inn }}" readonly>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Правопреемник (адрес)</label>
-                                <input type="text" class="form-control" value="{{ school.successor_address }}" readonly>
-                            </div>
+                <div class="mb-3">
+                    <label for="end_year" class="form-label">Год окончания обучения</label>
+                    <input type="number" class="form-control" id="end_year" name="end_year"
+                        value="{{ form_data.end_year or '' }}" required min="1900" max="2100" placeholder="Например: 2021">
+                    {% if errors.end_year %}
+                        <div class="text-danger">{{ errors.end_year }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary" id="find_school_btn">
+                        <span id="btn_text">Найти школу</span>
+                        <span id="loading_spinner" class="d-none">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Поиск школы...
+                        </span>
+                    </button>
+                </div>
+                <!-- Индикатор поиска -->
+                <div id="search_progress" class="d-none mb-3">
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <div class="spinner-border spinner-border-sm me-3" role="status" aria-hidden="true"></div>
+                        <div>
+                            <strong>Поиск школы...</strong><br>
+                            <small>Пожалуйста, подождите. Это может занять несколько секунд.</small>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
-                {% endif %}
-                    <div class="mb-3">
-                        <label for="start_year" class="form-label">Год начала</label>
-                        <select name="start_year" id="start_year" class="form-select" required>
-                            <option value="">Выберите год</option>
-                            {% for y in range(1950, 2021) %}
-                            <option value="{{ y }}" {% if form_data.start_year == y|string %}selected{% endif %}>{{ y }}</option>
-                            {% endfor %}
-                        </select>
-                        {% if errors.start_year %}
-                            <div class="text-danger">{{ errors.start_year }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="mb-3">
-                        <label for="end_year" class="form-label">Год окончания</label>
-                        <select name="end_year" id="end_year" class="form-select" required>
-                            <option value="">Выберите год</option>
-                            {% for y in range(1950, 2021) %}
-                            <option value="{{ y }}" {% if form_data.end_year == y|string %}selected{% endif %}>{{ y }}</option>
-                            {% endfor %}
-                        </select>
-                        {% if errors.end_year %}
-                            <div class="text-danger">{{ errors.end_year }}</div>
-                        {% endif %}
-                    </div>
-                    <button type="submit" name="action" value="confirm" class="btn btn-success">Подтвердить школу</button>
             </form>
+            {% if school %}
+            <div id="school_info_block" class="mb-3 mt-4">
+                <label class="form-label">Информация о выбранной школе</label>
+                <div class="border rounded p-3 mb-3 bg-light">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Краткое название школы</label>
+                            <input type="text" class="form-control" value="{{ school.name }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Полное название школы</label>
+                            <input type="text" class="form-control" value="{{ school.full_name }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">ИНН</label>
+                            <input type="text" class="form-control" value="{{ school.inn }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">E-mail</label>
+                            <input type="text" class="form-control" value="{{ school.email }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Телефон</label>
+                            <input type="text" class="form-control" value="{{ school.phone }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Статус</label>
+                            <input type="text" class="form-control" value="{{ school.status }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Адрес</label>
+                            <input type="text" class="form-control" value="{{ school.address }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Директор</label>
+                            <input type="text" class="form-control" value="{{ school.director }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Правопреемник (название)</label>
+                            <input type="text" class="form-control" value="{{ school.successor_name }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Правопреемник (ИНН)</label>
+                            <input type="text" class="form-control" value="{{ school.successor_inn }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Правопреемник (адрес)</label>
+                            <input type="text" class="form-control" value="{{ school.successor_address }}" readonly>
+                        </div>
+                    </div>
+                </div>
+                <form method="post" action="{{ url_for('graduate_panel.confirm_school_route', token=graduate.link_token) }}">
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" name="city" value="{{ form_data.city }}">
+                    <input type="hidden" name="school_name" value="{{ form_data.school_name }}">
+                    <input type="hidden" name="start_year" value="{{ form_data.start_year }}">
+                    <input type="hidden" name="end_year" value="{{ form_data.end_year }}">
+                    <button type="submit" class="btn btn-success">Подтвердить школу</button>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[action*="search-school"]');
+    const findBtn = document.getElementById('find_school_btn');
+    const btnText = document.getElementById('btn_text');
+    const loadingSpinner = document.getElementById('loading_spinner');
+    const searchProgress = document.getElementById('search_progress');
+    
+    if (form && findBtn) {
+        form.addEventListener('submit', function(e) {
+            // Показываем индикатор загрузки
+            btnText.classList.add('d-none');
+            loadingSpinner.classList.remove('d-none');
+            searchProgress.classList.remove('d-none');
+            
+            // Отключаем кнопку для предотвращения повторных отправок
+            findBtn.disabled = true;
+            
+            // Прокручиваем к индикатору поиска
+            searchProgress.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    }
+});
+</script>
+
 {% endblock %}

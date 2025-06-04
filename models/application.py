@@ -16,7 +16,7 @@ class Application(db.Model):
     
     # Отношения
     graduate = db.relationship('Graduate', back_populates='applications')
-    school = db.relationship('School', back_populates='applications')
+    # school relationship создается автоматически через backref в School.applications
     
     def __repr__(self):
         return f'<Application {self.id} - {self.status}>'

@@ -18,15 +18,12 @@ class School(db.Model):
     successor_inn = db.Column(db.String(12))
     successor_address = db.Column(db.String(512))
 
-    is_application = db.Column(db.Boolean, default=False)  # Флаг "школа из заявки"
-
-    successor_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=True)
+    is_selected_by_graduate = db.Column(db.Boolean, default=False, nullable=False)  # Выбрана выпускником
     
     # Отношения
-    successor = db.relationship('School', remote_side=[id])
-    graduate_schools = db.relationship('GraduateSchool', back_populates='school')
-    teacher_schools = db.relationship('TeacherSchool', back_populates='school')
-    applications = db.relationship('Application', back_populates='school')
+    graduate_schools = db.relationship('GraduateSchool', backref='school', cascade='all, delete-orphan', overlaps="school")
+    teacher_schools = db.relationship('TeacherSchool', backref='school', cascade='all, delete-orphan', overlaps="school")
+    applications = db.relationship('Application', backref='school', cascade='all, delete-orphan', overlaps="school")
     
     def __repr__(self):
         return f'<School {self.name}>'

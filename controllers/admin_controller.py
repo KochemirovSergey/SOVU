@@ -179,21 +179,19 @@ def schools():
 def school_delete(school_id):
     """Удаление школы с учётом зависимостей"""
     school = School.query.get_or_404(school_id)
+    print(f"DEBUG: Удаление школы {school.id} - {school.name}")
+    print(f"DEBUG: Связанных GraduateSchool: {len(school.graduate_schools)}")
+    print(f"DEBUG: Связанных TeacherSchool: {len(school.teacher_schools)}")
+    print(f"DEBUG: Связанных Application: {len(school.applications)}")
+    
     try:
-        # Удаляем связанные GraduateSchool
-        for gs in list(school.graduate_schools):
-            db.session.delete(gs)
-        # Удаляем связанные TeacherSchool
-        for ts in list(school.teacher_schools):
-            db.session.delete(ts)
-        # Удаляем связанные Application
-        for app in list(school.applications):
-            db.session.delete(app)
+        # Связанные записи удалятся автоматически благодаря cascade='all, delete-orphan'
         db.session.delete(school)
         db.session.commit()
         flash('Школа и связанные данные удалены', 'success')
     except Exception as e:
         db.session.rollback()
+        print(f"DEBUG: Ошибка при удалении школы: {str(e)}")
         flash(f'Не удалось удалить школу: {str(e)}', 'danger')
     return redirect(url_for('admin_panel.schools'))
 

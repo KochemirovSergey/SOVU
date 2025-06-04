@@ -28,7 +28,7 @@ class GraduateSchool(db.Model):
     
     # Отношения
     graduate = db.relationship('Graduate', back_populates='schools')
-    school = db.relationship('School', back_populates='graduate_schools')
+    # school relationship создается автоматически через backref в School.graduate_schools
     
     def __repr__(self):
         return f'<GraduateSchool {self.graduate_id}-{self.school_id}>'

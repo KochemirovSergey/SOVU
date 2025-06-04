@@ -8,8 +8,8 @@ class GraduateSchoolForm(FlaskForm):
     start_year = IntegerField('Год начала', validators=[DataRequired(message="Выберите год начала"), NumberRange(min=1900, max=2100, message="Некорректный год")])
     end_year = IntegerField('Год окончания', validators=[DataRequired(message="Выберите год окончания"), NumberRange(min=1900, max=2100, message="Некорректный год")])
 
-    def validate(self):
-        rv = super().validate()
+    def validate(self, extra_validators=None):
+        rv = super().validate(extra_validators=extra_validators)
         if not rv:
             return False
         if self.start_year.data is not None and self.end_year.data is not None:

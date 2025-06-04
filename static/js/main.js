@@ -184,16 +184,3 @@ function displaySchoolSearchResults(data, container) {
 
 // Запускаем инициализацию при загрузке страницы
 document.addEventListener('DOMContentLoaded', initApp);
-/**
- * Инициализация поиска школы по LLM для graduate/form.html
- */
-                fields.full_name.value = data.full_name || '';
-                fields.inn.value = data.inn || '';
-                fields.email.value = data.email || '';
-                fields.address.value = data.address || '';
-                fields.director.value = data.director || '';
-                fields.status.value = data.status || '';
-                fields.successor.value = data.successor || '';
-                fields.successor_address.value = data.successor_address || '';
-                fields.successor_director.value = data.successor_director || '';
-                infoBlock.classList.remove('d-none');

@@ -43,7 +43,7 @@ def create_app(config_name='default'):
     from models.teacher import Teacher, TeacherSchool
     from models.application import Application
     
-    admin.add_view(SecureModelView(Graduate, db.session, name='Выпускники', category='Модели'))
+    admin.add_view(SecureModelView(Graduate, db.session, name='Выпускники', category='Модели', endpoint='graduates_admin'))
     admin.add_view(SecureModelView(School, db.session, name='Школы', category='Модели'))
     admin.add_view(SecureModelView(Teacher, db.session, name='Учителя', category='Модели'))
     admin.add_view(SecureModelView(Application, db.session, name='Заявки', category='Модели'))

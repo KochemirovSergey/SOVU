@@ -30,7 +30,7 @@ class TeacherSchool(db.Model):
     
     # Отношения
     teacher = db.relationship('Teacher', back_populates='schools')
-    school = db.relationship('School', back_populates='teacher_schools')
+    # school relationship создается автоматически через backref в School.teacher_schools
     
     def __repr__(self):
         return f'<TeacherSchool {self.teacher_id}-{self.school_id}>'

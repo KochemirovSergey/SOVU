@@ -22,137 +22,13 @@ voting_service = VotingService()
 
 import logging
 
-@graduate_bp.route('/<token>', methods=['GET', 'POST'])
+@graduate_bp.route('/<token>', methods=['GET'])
 @csrf.exempt
 def form(token):
-    """Форма для заполнения информации о школе"""
+    """Форма для заполнения информации о школе (только GET)"""
     from forms.graduate_forms import GraduateSchoolForm
     graduate = Graduate.query.filter_by(link_token=token).first_or_404()
-
-    search_done = False
-    success_message = None
-
     form = GraduateSchoolForm()
-
-    if request.method == 'POST':
-        action = request.form.get('action', 'search')
-        if form.validate_on_submit():
-            form_data = {
-                "city": form.city.data.strip(),
-                "school_name": form.school_name.data.strip(),
-                "start_year": str(form.start_year.data).strip(),
-                "end_year": str(form.end_year.data).strip()
-            }
-
-            from llm_search_school import extract_school_chain
-            school_chain = extract_school_chain(form_data["city"], form_data["school_name"])
-
-            db_schools = []
-            main_school = None
-            main_school_idx = None
-
-            for idx, school_data in enumerate(school_chain):
-                if str(school_data.status).strip().lower() == "действующая" and main_school is None:
-                    main_school_idx = idx
-                school = None
-                if school_data.inn:
-                    school = School.query.filter_by(inn=school_data.inn).first()
-                if not school and school_data.inn:
-                    school = School.query.filter_by(name=school_data.name, address=school_data.address).first()
-                elif not school:
-                    school = School.query.filter_by(name=school_data.name, address=school_data.address).first()
-                if not school:
-                    school = School(
-                        name=school_data.name,
-                        full_name=school_data.full_name,
-                        address=school_data.address,
-                        inn=school_data.inn,
-                        director=school_data.director,
-                        email=school_data.email,
-                        phone=school_data.phone,
-                        status=school_data.status,
-                        city=form_data["city"],
-                        successor_name=school_data.successor_name,
-                        successor_inn=school_data.successor_inn,
-                        successor_address=school_data.successor_address,
-                        is_application=False
-                    )
-                    db.session.add(school)
-                    db.session.flush()
-                else:
-                    school.name = school_data.name
-                    school.full_name = school_data.full_name
-                    school.address = school_data.address
-                    school.inn = school_data.inn
-                    school.director = school_data.director
-                    school.email = school_data.email
-                    school.phone = school_data.phone
-                    school.status = school_data.status
-                    school.city = form_data["city"]
-                    school.successor_name = school_data.successor_name
-                    school.successor_inn = school_data.successor_inn
-                    school.successor_address = school_data.successor_address
-                    school.is_application = False
-                    db.session.flush()
-                db_schools.append(school)
-            db.session.commit()
-
-            gs_selected = GraduateSchool(
-                graduate_id=graduate.id,
-                school_id=db_schools[0].id,
-                start_year=form_data["start_year"],
-                end_year=form_data["end_year"],
-            )
-            db.session.add(gs_selected)
-            db.session.commit()
-
-            if main_school_idx is not None:
-                main_school = db_schools[main_school_idx]
-                if main_school_idx != 0:
-                    gs_active = GraduateSchool(
-                        graduate_id=graduate.id,
-                        school_id=main_school.id,
-                        start_year=form_data["start_year"],
-                        end_year=form_data["end_year"],
-                    )
-                    db.session.add(gs_active)
-                    db.session.commit()
-                application = Application(
-                    graduate_id=graduate.id,
-                    school_id=main_school.id,
-                    start_year=form_data["start_year"],
-                    end_year=form_data["end_year"],
-                    school_link_token="",
-                    teacher_link_token=""
-                )
-                db.session.add(application)
-                db.session.commit()
-
-                link_service = LinkService()
-                link_service.generate_school_link(application.id)
-                link_service.generate_teacher_link(application.id)
-                db.session.commit()
-
-                success_message = "Школа успешно добавлена"
-                errors = {}
-            else:
-                errors = {"school_name": "Не удалось найти действующую школу в цепочке. Заявка не создана."}
-                success_message = None
-
-            search_done = True
-            return render_template(
-                'graduate/form.html',
-                graduate=graduate,
-                cities=[],
-                selected_city=form_data["city"],
-                form_data=form_data,
-                errors=errors,
-                search_done=search_done,
-                success_message=success_message,
-                form=form
-            )
-
-    # GET-запрос или первый показ формы
     form_data = {
         "city": "",
         "school_name": "",
@@ -170,6 +46,116 @@ def form(token):
         search_done=False,
         success_message=None,
         form=form
+    )
+
+# Новый маршрут: поиск школы
+from services.school_search_service import search_and_save_schools
+
+@graduate_bp.route('/<token>/search-school', methods=['POST'])
+@csrf.exempt
+def search_school(token):
+    from forms.graduate_forms import GraduateSchoolForm
+    graduate = Graduate.query.filter_by(link_token=token).first_or_404()
+    form = GraduateSchoolForm()
+    errors = {}
+    success_message = None
+    search_done = False
+    selected_school = None
+    
+    form_data = {
+        "city": request.form.get("city", "").strip(),
+        "school_name": request.form.get("school_name", "").strip(),
+        "start_year": request.form.get("start_year", "").strip(),
+        "end_year": request.form.get("end_year", "").strip()
+    }
+    
+    logging.info(f"Search school request: {form_data}")
+    
+    if form.validate_on_submit():
+        try:
+            logging.info("Form validation passed, calling search_and_save_schools")
+            selected_school = search_and_save_schools(
+                form_data["city"],
+                form_data["school_name"],
+                None
+            )
+            logging.info(f"Search result: {selected_school}")
+            if selected_school:
+                search_done = True
+                success_message = "Школа найдена! Проверьте данные и подтвердите."
+            else:
+                errors["school_name"] = "Не удалось найти школу"
+        except Exception as e:
+            logging.error(f"Error in search_and_save_schools: {str(e)}")
+            errors["school_name"] = f"Ошибка поиска: {str(e)}"
+    else:
+        logging.warning(f"Form validation failed: {form.errors}")
+        errors = form.errors
+
+    return render_template(
+        'graduate/form.html',
+        graduate=graduate,
+        cities=[],
+        selected_city=form_data["city"],
+        form_data=form_data,
+        errors=errors,
+        search_done=search_done,
+        success_message=success_message,
+        form=form,
+        school=selected_school
+    )
+
+# Новый маршрут: подтверждение школы
+from services.school_confirmation_service import confirm_school
+
+@graduate_bp.route('/<token>/confirm-school', methods=['POST'])
+@csrf.exempt
+def confirm_school_route(token):
+    from forms.graduate_forms import GraduateSchoolForm
+    graduate = Graduate.query.filter_by(link_token=token).first_or_404()
+    form = GraduateSchoolForm()
+    errors = {}
+    success_message = None
+    form_data = {
+        "city": request.form.get("city", "").strip(),
+        "school_name": request.form.get("school_name", "").strip(),
+        "start_year": request.form.get("start_year", "").strip(),
+        "end_year": request.form.get("end_year", "").strip()
+    }
+    # Найти выбранную школу
+    selected_school = School.query.filter_by(is_selected_by_graduate=True, city=form_data["city"], name=form_data["school_name"]).first()
+    if not selected_school:
+        errors["school_name"] = "Не найдена выбранная школа для подтверждения"
+        return render_template(
+            'graduate/form.html',
+            graduate=graduate,
+            cities=[],
+            selected_city=form_data["city"],
+            form_data=form_data,
+            errors=errors,
+            search_done=True,
+            success_message=None,
+            form=form,
+            school=None
+        )
+    gs, application = confirm_school(
+        graduate,
+        selected_school,
+        int(form_data["start_year"]),
+        int(form_data["end_year"])
+    )
+    success_message = "Школа успешно подтверждена и заявка создана"
+    return render_template(
+        'graduate/form.html',
+        graduate=graduate,
+        cities=[],
+        selected_city=form_data["city"],
+        form_data=form_data,
+        errors={},
+        search_done=True,
+        success_message=success_message,
+        form=form,
+        school=selected_school
     )
 @graduate_bp.route('/<token>/school/<int:school_id>/delete', methods=['POST'])
 @csrf.exempt
