@@ -2,12 +2,15 @@ from models import db
 from models.graduate import Graduate, GraduateSchool
 from models.school import School
 from models.application import Application
+from services.link_service import LinkService
 
 def confirm_school(graduate: Graduate, school: School, start_year: int, end_year: int):
     """
     Добавляет выбранную школу выпускнику и создает заявку для действующей школы.
     Если выбранная школа ликвидирована — ищет правопреемника по ИНН и создает заявку для него.
     """
+    link_service = LinkService()
+    
     # Добавить GraduateSchool для выбранной школы
     gs = GraduateSchool(
         graduate_id=graduate.id,
@@ -25,14 +28,14 @@ def confirm_school(graduate: Graduate, school: School, start_year: int, end_year
         if successor:
             active_school = successor
 
-    # Создать заявку для действующей школы
+    # Создать заявку для действующей школы с уникальными токенами
     application = Application(
         graduate_id=graduate.id,
         school_id=active_school.id,
         start_year=start_year,
         end_year=end_year,
-        school_link_token="",
-        teacher_link_token=""
+        school_link_token=link_service.generate_token(),
+        teacher_link_token=link_service.generate_token()
     )
     db.session.add(application)
     db.session.commit()
